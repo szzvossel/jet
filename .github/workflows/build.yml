@@ -9,8 +9,10 @@ on:
 
 jobs:
   build-windows:
-    name: Build (Windows 11)
+    name: Build (Windows)
     runs-on: windows-latest
+    env:
+      TAURI_BROWSER: none
     steps:
       - uses: actions/checkout@v4
 
@@ -27,23 +29,31 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
+      - name: Install cargo-xwin
+        run: cargo install cargo-xwin
+
       - name: Install frontend dependencies
-        run: cd frontend && npm ci
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked
 
-      - name: Build JET (Windows)
-        run: cargo tauri build
+      - name: Build JET (Windows x86_64)
+        run: cargo tauri build --target x86_64-pc-windows-msvc
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: JET-windows
           path: |
-            src-tauri/target/release/jet.exe
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/x86_64-pc-windows-msvc/release/jet.exe
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+            src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
 
   build-macos:
     name: Build (macOS)
@@ -65,7 +75,12 @@ jobs:
           workspaces: src-tauri -> target
 
       - name: Install frontend dependencies
-        run: cd frontend && npm ci
+        working-directory: frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked

@@ -12,6 +12,7 @@ src-tauri/gen/
 # Frontend (Node.js)
 frontend/node_modules/
 frontend/dist/
+dist/
 
 # OS files
 .DS_Store

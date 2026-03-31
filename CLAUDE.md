@@ -10,8 +10,11 @@ All `cargo tauri` commands must be run from the **project root** (`/Users/vossel
 # Development (hot reload frontend, debug Rust)
 cargo tauri dev
 
-# Production build (optimized Rust, bundled frontend → .app + .dmg)
+# Production build (optimized Rust, bundled frontend → .app + .dmg on macOS, .exe + .msi on Windows)
 cargo tauri build
+
+# Windows cross-compile from non-Windows host (requires cargo-xwin)
+cargo tauri build --target x86_64-pc-windows-msvc
 
 # Run Rust tests (all)
 cd src-tauri && cargo test
@@ -82,10 +85,35 @@ Tauri v2 desktop app: **Rust backend** for quantitative computation, **React/Typ
 ### Frontend (`frontend/package.json`)
 - `@tauri-apps/api` v2, `@tauri-apps/plugin-shell` v2 — Tauri JS API
 - `react` + `react-dom` v18 — UI framework
+- `typescript` v5 — Type checking
 - `vite` v5 — Build tool and dev server
 - `tailwindcss` v3 — Utility CSS
 - `lightweight-charts` v4 — TradingView charting (installed but not yet integrated)
 - `@tauri-apps/cli` v2 — Tauri CLI (dev dependency)
+- `cross-env` — Cross-platform environment variable setting
+
+## CI/CD (GitHub Actions)
+
+The project uses a GitHub Actions workflow (`.github/workflows/build.yml`) that builds native artifacts for Windows and macOS in parallel.
+
+### Windows Build
+- Runner: `windows-latest`
+- Target: `x86_64-pc-windows-msvc`
+- Uses `cargo-xwin` for cross-compilation toolchain
+- Frontend is built separately via `working-directory: frontend` + `npm install && npm run build`
+- Environment variable `TAURI_BROWSER=none` is set to prevent browser-dependent build steps from failing on headless runners
+- Artifacts: `jet.exe`, `.msi` installer, `.exe` (NSIS) installer
+
+### macOS Build
+- Runner: `macos-latest`
+- Native target (no cross-compilation)
+- Same frontend build pattern: separate `npm install` and `npm run build` steps
+- Artifacts: `JET.app`, `.dmg` installer
+
+### Notes
+- The workflow uses `npm install` (not `npm ci`) to avoid lockfile synchronization issues across platforms
+- Frontend is built **before** `cargo tauri build` runs. The `beforeBuildCommand` in `tauri.conf.json` also runs `npm run build`, but since `dist/` already exists it completes quickly
+- Rust compilation is cached via `swatinem/rust-cache@v2`
 
 ## Conventions
 
