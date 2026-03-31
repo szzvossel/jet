@@ -1,97 +1,29 @@
-# JET -- Equity Derivatives Quant Desktop Application
+# CLAUDE.md
 
-A next-generation Rust desktop application for running, executing, and visualizing
-quantitative analysis on equity derivatives. Built with Tauri v2 (Rust backend +
-React/TypeScript frontend).
-
-## Architecture
-
-### Framework: Tauri v2
-
-**Rust backend** handles all quantitative computation:
-- Black-Scholes-Merton pricing engine with analytical Greeks
-- Numerical Greeks via bump-and-revalue (central finite differences)
-- Data models for option contracts and market data
-
-**React + TypeScript frontend** handles visualization:
-- Parameter input forms with interactive sliders
-- Canvas-based payoff diagrams and Greeks profile charts
-- Responsive layout with TailwindCSS
-
-**Communication:** Tauri IPC commands bridge the frontend and backend.
-The frontend calls `invoke()` to execute Rust functions; results are serialized
-as JSON and returned as typed TypeScript objects.
-
-### Project Structure
-
-```
-jet/
-├── src-tauri/                    # Rust backend (Tauri v2 application)
-│   ├── Cargo.toml                # Rust dependencies
-│   ├── build.rs                  # Tauri build script
-│   ├── tauri.conf.json           # Tauri configuration (window, build, bundle)
-│   ├── capabilities/
-│   │   └── default.json          # Tauri security capabilities
-│   ├── icons/                    # App icons
-│   └── src/
-│       ├── main.rs               # Application entry point
-│       ├── lib.rs                # Tauri command handlers and app setup
-│       ├── math/
-│       │   ├── mod.rs            # Math utilities re-exports
-│       │   └── distributions.rs  # Normal CDF/PDF wrappers (statrs)
-│       ├── pricing/
-│       │   ├── mod.rs            # Pricing module re-exports
-│       │   ├── types.rs          # OptionType, OptionContract, MarketData, PricingResult
-│       │   ├── black_scholes.rs  # BSM pricing + analytical Greeks + price_curve
-│       │   ├── greeks.rs         # Numerical Greeks (finite-difference bump-and-revalue)
-│       │   ├── binomial.rs       # Binomial tree pricer (stub, future)
-│       │   └── monte_carlo.rs    # MC simulation engine (stub, future)
-│       └── data/
-│           ├── mod.rs            # Data module re-exports
-│           ├── market.rs         # MarketSnapshot struct
-│           └── portfolio.rs      # Portfolio/position definitions (stub, future)
-├── frontend/                     # React + TypeScript frontend
-│   ├── package.json              # Node.js dependencies
-│   ├── vite.config.ts            # Vite bundler config
-│   ├── tailwind.config.js        # TailwindCSS theme
-│   ├── tsconfig.json             # TypeScript config
-│   ├── index.html                # HTML entry point
-│   └── src/
-│       ├── main.tsx              # React entry point
-│       ├── App.tsx               # Main application component (state, layout)
-│       ├── styles.css            # Global styles (TailwindCSS)
-│       ├── types/
-│       │   └── index.ts          # TypeScript types mirroring Rust backend
-│       ├── hooks/
-│       │   └── usePricing.ts     # Tauri IPC command wrappers (invoke)
-│       └── components/
-│           ├── OptionInput.tsx    # Option parameter input form
-│           ├── ResultPanel.tsx    # Pricing result display
-│           ├── PayoffChart.tsx    # Canvas payoff diagram
-│           └── GreeksChart.tsx    # Canvas Greeks profile chart
-└── CLAUDE.md                     # This file
-```
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Build and Run Commands
 
+All `cargo tauri` commands must be run from the **project root** (`/Users/vossel/workspace/jet`), not from `src-tauri/`. The `tauri.conf.json` uses relative paths (`cd ../frontend`) that require this.
+
 ```bash
-# Development mode (hot reload for frontend, debug Rust)
+# Development (hot reload frontend, debug Rust)
 cargo tauri dev
 
-# Production build (optimized Rust, bundled frontend)
+# Production build (optimized Rust, bundled frontend → .app + .dmg)
 cargo tauri build
 
-# Run Rust tests
+# Run Rust tests (all)
 cd src-tauri && cargo test
 
-# Check Rust compilation (fast)
+# Run a single Rust test
+cd src-tauri && cargo test test_hull_example_call
+
+# Run Rust tests with output
+cd src-tauri && cargo test -- --nocapture
+
+# Check Rust compilation (fast, no codegen)
 cd src-tauri && cargo check
-
-# TypeScript type-check
-cd frontend && npx tsc --noEmit
-
-# Build frontend only
-cd frontend && npm run build
 
 # Format Rust code
 cd src-tauri && cargo fmt
@@ -99,67 +31,77 @@ cd src-tauri && cargo fmt
 # Lint Rust code
 cd src-tauri && cargo clippy
 
-# Run the release binary directly
-./src-tauri/target/release/jet
+# TypeScript type-check
+cd frontend && npx tsc --noEmit
+
+# Build frontend only
+cd frontend && npm run build
 ```
 
-## Key Dependencies
+## Architecture
 
-### Rust (src-tauri/Cargo.toml)
+Tauri v2 desktop app: **Rust backend** for quantitative computation, **React/TypeScript frontend** for visualization. Communication via Tauri IPC (`invoke()` calls serialized as JSON).
 
-| Crate | Purpose |
-|-------|---------|
-| `tauri` v2 | Desktop application framework (WebView shell) |
-| `tauri-plugin-shell` v2 | Shell access plugin for Tauri |
-| `tauri-build` v2 | Build-time Tauri code generation |
-| `statrs` | Statistical distributions (Normal CDF/PDF) |
-| `serde` + `serde_json` | JSON serialization for IPC |
-| `thiserror` | Domain error types |
+### Rust Backend (`src-tauri/src/`)
 
-### Frontend (frontend/package.json)
+- `lib.rs` — Tauri command handlers (`price_option`, `price_curve`, `greeks_curve`) and app setup
+- `main.rs` — Entry point, calls `jet_lib::run()`
+- `math/distributions.rs` — Normal CDF/PDF wrappers over `statrs`
+- `pricing/black_scholes.rs` — BSM pricing engine: analytical price + all 5 Greeks (delta, gamma, vega, theta, rho), continuous dividend yield support, `price_curve()` for spot-range charting
+- `pricing/greeks.rs` — Numerical Greeks via central finite differences (bump-and-revalue)
+- `pricing/types.rs` — Core domain types: `OptionType`, `OptionContract`, `MarketData`, `PricingResult`
+- `pricing/binomial.rs`, `pricing/monte_carlo.rs` — Stubs for future implementation
+- `data/market.rs` — `MarketSnapshot` struct; `data/portfolio.rs` — Stub
 
-| Package | Purpose |
-|---------|---------|
-| `@tauri-apps/api` v2 | Tauri JS/TS API (invoke commands) |
-| `react` + `react-dom` v18 | UI framework |
-| `typescript` v5 | Type safety |
-| `vite` v5 | Build tool and dev server |
-| `tailwindcss` v3 | Utility-first CSS |
-| `lightweight-charts` v4 | TradingView charting (available for future use) |
+### React Frontend (`frontend/src/`)
+
+- `App.tsx` — Main component, state management, layout grid
+- `hooks/usePricing.ts` — Tauri `invoke()` wrappers for IPC commands
+- `types/index.ts` — TypeScript interfaces mirroring Rust types (must stay in sync with `pricing/types.rs`)
+- `components/OptionInput.tsx` — Parameter sliders + call/put toggle
+- `components/ResultPanel.tsx` — Formatted price and Greeks display
+- `components/PayoffChart.tsx` — Canvas BSM value curve + intrinsic payoff at expiry
+- `components/GreeksChart.tsx` — Canvas Greeks profile (delta, gamma, vega, theta vs spot)
 
 ## Tauri IPC Commands
 
 | Command | Input | Output | Description |
 |---------|-------|--------|-------------|
-| `price_option` | OptionContract, MarketData | PricingResult | Price + all 5 Greeks |
-| `price_curve` | OptionContract, MarketData, spot_range, num_points | Vec<{spot, price}> | Price vs spot curve |
-| `greeks_curve` | GreeksCurveRequest | GreeksCurveResult | All Greeks vs spot |
+| `price_option` | OptionContract, MarketData | PricingResult | Price + all 5 analytical Greeks |
+| `price_curve` | OptionContract, MarketData, spot_range: [f64; 2], num_points: usize | Vec<{spot, price}> | BSM value across spot range |
+| `greeks_curve` | GreeksCurveRequest (contract, market, spot_range, num_points) | GreeksCurveResult (spots, prices, deltas, gammas, vegas, thetas) | All Greeks across spot range |
+
+## Key Dependencies
+
+### Rust (`src-tauri/Cargo.toml`)
+- `tauri` v2, `tauri-plugin-shell` v2, `tauri-build` v2 — Desktop framework
+- `statrs` — Normal distribution functions
+- `serde` + `serde_json` — JSON serialization for IPC
+- `thiserror` — Domain error types
+
+### Frontend (`frontend/package.json`)
+- `@tauri-apps/api` v2, `@tauri-apps/plugin-shell` v2 — Tauri JS API
+- `react` + `react-dom` v18 — UI framework
+- `vite` v5 — Build tool and dev server
+- `tailwindcss` v3 — Utility CSS
+- `lightweight-charts` v4 — TradingView charting (installed but not yet integrated)
+- `@tauri-apps/cli` v2 — Tauri CLI (dev dependency)
 
 ## Conventions
 
-- **Error handling:** Use `Result<T, String>` for Tauri commands (Tauri serializes
-  Err as an error to the frontend). Use `Result<T, E>` with `thiserror` for internal
-  library code. Never unwrap in library code.
-- **Numerics:** `f64` throughout. Rates are annualized decimal. Time is year-fraction.
-- **Types:** Frontend TypeScript types in `frontend/src/types/index.ts` must stay in
-  sync with Rust types in `src-tauri/src/pricing/types.rs`. The `OptionType` is
-  serialized as a string ("Call" | "Put") via serde.
-- **Testing:** Rust unit tests in `#[cfg(test)] mod tests` within each file.
-- **Naming:** Rust snake_case functions, PascalCase types. Domain terms keep
-  conventional names (delta, vega, black_scholes_price).
+- **Error handling:** `Result<T, String>` for Tauri commands. `Result<T, E>` with `thiserror` for internal code. No unwrap in library code.
+- **Numerics:** `f64` throughout. Rates are annualized decimal (e.g., 0.08 for 8%). Time is year-fraction (e.g., 0.25 for 3 months).
+- **Type sync:** Frontend types in `frontend/src/types/index.ts` must mirror Rust types in `src-tauri/src/pricing/types.rs`. `OptionType` serializes as string `"Call"` | `"Put"`.
+- **Testing:** Inline `#[cfg(test)] mod tests` in each Rust file. Tests validate BSM against Hull textbook examples, put-call parity, delta bounds, and numerical vs analytical Greeks agreement.
+- **Chart colors:** BSM value `#818cf8`, payoff `#64748b`, delta `#3b82f6`, gamma `#a855f7`, vega `#eab308`, theta `#f97316`.
 
 ## MVP Scope
 
-The initial working application includes:
-
-1. **Black-Scholes pricing engine** -- price and all five first-order Greeks
-   for European calls and puts, with continuous dividend yield support.
-2. **Interactive parameter input** -- sliders for S, K, T, r, sigma, q and
-   call/put toggle.
-3. **Results display** -- formatted price and Greeks output.
-4. **Payoff diagram** -- canvas chart showing BSM value curve and intrinsic
-   payoff at expiry.
-5. **Greeks profile chart** -- delta, gamma, vega, theta across spot prices.
+1. Black-Scholes pricing with all five first-order Greeks (European calls/puts, continuous dividend yield)
+2. Interactive parameter input (S, K, T, r, sigma, q sliders + call/put toggle)
+3. Results display (formatted price + Greeks)
+4. Payoff diagram (BSM value curve + intrinsic payoff at expiry)
+5. Greeks profile chart (delta, gamma, vega, theta across spot prices)
 
 ## Future Roadmap
 
@@ -170,6 +112,6 @@ The initial working application includes:
 - [ ] P&L heatmap (spot x time)
 - [ ] Market data import (CSV/JSON)
 - [ ] Portfolio-level risk aggregation
-- [ ] TradingView lightweight-charts integration for interactive charts
+- [ ] TradingView lightweight-charts integration
 - [ ] Real-time data feed integration
 - [ ] Export to PDF/image
