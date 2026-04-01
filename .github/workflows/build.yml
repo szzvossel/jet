@@ -11,8 +11,6 @@ jobs:
   build-windows:
     name: Build (Windows)
     runs-on: windows-latest
-    env:
-      TAURI_BROWSER: none
     steps:
       - uses: actions/checkout@v4
 
@@ -29,9 +27,6 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
-      - name: Install cargo-xwin
-        run: cargo install cargo-xwin
-
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install
@@ -45,6 +40,8 @@ jobs:
 
       - name: Build JET (Windows x86_64)
         run: cargo tauri build --target x86_64-pc-windows-msvc
+        env:
+          TAURI_SKIP_BEFORE_BUILD: 1
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -87,6 +84,8 @@ jobs:
 
       - name: Build JET (macOS)
         run: cargo tauri build
+        env:
+          TAURI_SKIP_BEFORE_BUILD: 1
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
