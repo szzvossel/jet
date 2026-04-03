@@ -35,11 +35,8 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2" --locked
-
       - name: Build JET (Windows x86_64)
-        run: cargo tauri build --target x86_64-pc-windows-msvc
+        run: frontend\node_modules\.bin\tauri build --target x86_64-pc-windows-msvc
         env:
           TAURI_SKIP_BEFORE_BUILD: 1
 
@@ -79,11 +76,8 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2" --locked
-
       - name: Build JET (macOS)
-        run: cargo tauri build
+        run: ./frontend/node_modules/.bin/tauri build
         env:
           TAURI_SKIP_BEFORE_BUILD: 1
 

@@ -9,6 +9,7 @@ import { OptionInput } from "./components/OptionInput";
 import { ResultPanel } from "./components/ResultPanel";
 import { PayoffChart } from "./components/PayoffChart";
 import { GreeksChart } from "./components/GreeksChart";
+import { SplashScreen } from "./components/SplashScreen";
 import { priceOption, priceCurve, greeksCurve } from "./hooks/usePricing";
 import type {
   OptionType,
@@ -39,6 +40,7 @@ function App() {
   const [greeksData, setGreeksData] = useState<GreeksCurveResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   const handlePrice = useCallback(async () => {
     setLoading(true);
@@ -69,8 +71,14 @@ function App() {
     }
   }, [contract, market]);
 
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <>
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+      <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 px-6 py-4">
         <div className="flex items-center gap-3">
@@ -136,6 +144,7 @@ function App() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
 
