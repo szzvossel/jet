@@ -4,8 +4,6 @@
   "version": "0.1.0",
   "identifier": "com.jet.analytics",
   "build": {
-    "beforeDevCommand": "cd ../frontend && npm run dev",
-    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "cd ../frontend && npm run build",
     "frontendDist": "../frontend/dist"
   },

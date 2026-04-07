@@ -4,17 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build and Run Commands
 
-All `cargo tauri` commands must be run from the **project root** (`/Users/vossel/workspace/jet`), not from `src-tauri/`. The `tauri.conf.json` uses relative paths (`cd ../frontend`) that require this.
+All Tauri commands use `npm run tauri` from the **`frontend/`** directory. The `tauri.conf.json` uses relative paths (`cd ../frontend`) that require running from there.
+
+add {"beforeDevCommand": "cd ../frontend && npm run dev","devUrl": "http://localhost:1420"} in tauri.config.json for debugging.
 
 ```bash
 # Development (hot reload frontend, debug Rust)
-cargo tauri dev
+cd frontend && npm run tauri dev
 
 # Production build (optimized Rust, bundled frontend → .app + .dmg on macOS, .exe + .msi on Windows)
-cargo tauri build
+cd frontend && npm run tauri build
 
 # Windows cross-compile from non-Windows host (requires cargo-xwin)
-cargo tauri build --target x86_64-pc-windows-msvc
+cd frontend && npm run tauri build -- --target x86_64-pc-windows-msvc
 
 # Run Rust tests (all crates in workspace)
 cargo test
@@ -73,9 +75,12 @@ All pricing, analytics, and parsing logic lives here. Both `src-tauri` and `src-
 - `lib.rs` — Re-exports all modules + shared types (`PricePoint`, `GreeksCurveResult`, etc.)
 - `math/distributions.rs` — Normal CDF/PDF wrappers over `statrs`
 - `pricing/black_scholes.rs` — BSM pricing engine: analytical price + all 5 Greeks
+- `pricing/greeks.rs` — Numerical Greeks via central finite-difference bump-and-revalue
 - `pricing/types.rs` — Core domain types: `OptionType`, `OptionContract`, `MarketData`, `PricingResult`
+- `pricing/binomial.rs`, `pricing/monte_carlo.rs` — Stubs for future implementation
 - `analytics/` — Vol surfaces, yield curves, dividends, correlation, P&L attribution
 - `parsing/quote_parser.rs` — Option strategy parser (multi-leg spreads)
+- `parsing/types.rs` — Strategy types: `ParsedLeg`, `PricedLeg`, `StrategyParseResult`, `PricedStrategyResult`, `StrategyGreeks`
 - `data/` — Market data structures
 
 ### Tauri Desktop App (`src-tauri/`)
@@ -117,6 +122,25 @@ Axum server exposing the same 12 operations as REST endpoints:
 - `types/index.ts` — TypeScript interfaces mirroring Rust types
 - `components/strategy/StrategyTab.tsx` — Backend selector UI (Local/Remote toggle)
 
+Frontend dev server runs on **port 1420**. The Vite config proxies `/api` requests to `http://localhost:3000` (the Axum server). Tailwind uses a custom `brand` color palette based on indigo.
+
+## Strategy Quote Parser
+
+The parser in `parsing/quote_parser.rs` converts quote strings into structured multi-leg strategies. Input format:
+
+```
+SPX apr26 +1 110%C A / -1 100%P A
+```
+
+- **Symbol** (e.g., `SPX`, `SPY`) — Hardcoded spot prices for 6 underlyings: SPX(5500), SPY(500), QQQ(400), IWM(200), DIA(400), EEM(40)
+- **Expiry** — `monYY` (resolves to 3rd Friday), ISO date (`2026-04-17`), or `DDMonYY`
+- **Quantity + sign** — `+1` (long), `-1` (short)
+- **Strike** — Percentage (`110%C` = 110% of spot) or absolute (`5500C`)
+- **Option type** — `C`/`Call` or `P`/`Put`
+- **Style** — `A` (American, default) or `E` (European)
+- Legs separated by `/`
+- Auto-infers strategy: Single Option, Bull/Bear Spread, Straddle, Strangle, Iron Condor
+
 ## Frontend Backend Selector
 
 The Strategy tab includes a backend toggle:
@@ -128,11 +152,22 @@ The selection persists to `localStorage` and applies to all pricing calls.
 
 ## Tauri IPC Commands
 
-| Command | Input | Output | Description |
-|---------|-------|--------|-------------|
-| `price_option` | OptionContract, MarketData | PricingResult | Price + all 5 analytical Greeks |
-| `price_curve` | OptionContract, MarketData, spot_range: [f64; 2], num_points: usize | Vec<{spot, price}> | BSM value across spot range |
-| `greeks_curve` | GreeksCurveRequest (contract, market, spot_range, num_points) | GreeksCurveResult (spots, prices, deltas, gammas, vegas, thetas) | All Greeks across spot range |
+The 12 commands mirror the REST API 1:1. All accept JSON-serialized Rust structs and return JSON:
+
+| Command | Input | Output |
+|---------|-------|--------|
+| `price_option` | OptionContract, MarketData | PricingResult |
+| `price_curve` | OptionContract, MarketData, spot_range: [f64; 2], num_points: usize | Vec<{spot, price}> |
+| `greeks_curve` | GreeksCurveRequest | GreeksCurveResult |
+| `get_vol_surface` | — | VolSurface |
+| `get_curves` | — | Vec<CurveData> |
+| `get_dividend_curve` | — | DividendCurve |
+| `get_correlation_matrix` | — | CorrelationMatrix |
+| `get_correlation_entries` | — | Vec<CorrelationEntry> |
+| `get_risk_summary` | — | RiskSummary |
+| `get_pnl_attribution` | — | PnlExplain |
+| `parse_strategy` | input: String | StrategyParseResult |
+| `price_strategy` | input: String, assumptions? | PricedStrategyResult |
 
 ## Key Dependencies
 
