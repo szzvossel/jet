@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import type { OptionContract, MarketData } from "../types";
+import type { OptionContract, MarketData } from "../../types";
 
 interface Props {
   contract: OptionContract;

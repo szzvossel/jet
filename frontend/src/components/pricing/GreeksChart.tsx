@@ -5,7 +5,7 @@
  */
 
 import React, { useRef, useEffect } from "react";
-import type { GreeksCurveResult } from "../types";
+import type { GreeksCurveResult } from "../../types";
 
 interface Props {
   data: GreeksCurveResult | null;

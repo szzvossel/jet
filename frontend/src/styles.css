@@ -200,3 +200,75 @@ body {
     transform: scale(1.02);
   }
 }
+
+/* ============================================================
+   Tab Bar Styles
+   ============================================================ */
+
+.tab-bar-active {
+  position: relative;
+}
+
+.tab-bar-active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #4f46e5;
+}
+
+/* ============================================================
+   Heatmap Cells — Correlation Matrix
+   ============================================================ */
+
+.heatmap-positive {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.heatmap-negative {
+  background-color: rgba(239, 68, 68, 0.3);
+}
+
+.heatmap-neutral {
+  background-color: rgba(71, 85, 105, 0.3);
+}
+
+/* ============================================================
+   Number Display — Monospace Alignment
+   ============================================================ */
+
+.number-display-positive {
+  color: #4ade80;
+}
+
+.number-display-negative {
+  color: #f87171;
+}
+
+.number-display-zero {
+  color: #94a3b8;
+}
+
+/* ============================================================
+   Sortable Table
+   ============================================================ */
+
+.sortable-table th {
+  user-select: none;
+}
+
+.sortable-table th.sortable:hover {
+  background-color: rgba(71, 85, 105, 0.2);
+}
+
+/* ============================================================
+   Tab Content Area — Scrollable with Footer Space
+   ============================================================ */
+
+.tab-content {
+  overflow-y: auto;
+  min-height: calc(100vh - 140px);
+  max-height: calc(100vh - 140px);
+}

@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import type { PricingResult } from "../types";
+import type { PricingResult } from "../../types";
 
 interface Props {
   result: PricingResult | null;
