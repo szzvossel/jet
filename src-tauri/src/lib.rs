@@ -151,6 +151,22 @@ async fn tracer_get_events(
 }
 
 // ---------------------------------------------------------------------------
+// Tauri IPC Commands — DevTools
+// ---------------------------------------------------------------------------
+
+/// Toggle the WebKit DevTools window (F12 shortcut).
+#[tauri::command]
+fn toggle_devtools(app: tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        if window.is_devtools_open() {
+            window.close_devtools();
+        } else {
+            window.open_devtools();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // App setup
 // ---------------------------------------------------------------------------
 
@@ -165,6 +181,7 @@ pub fn run() {
                 jet_tracer::init_tracer(tracer_dir)
             );
             app.manage(TracerStateHandle { state: tracer_state });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -182,6 +199,7 @@ pub fn run() {
             price_strategy,
             tracer_get_kpis,
             tracer_get_events,
+            toggle_devtools,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

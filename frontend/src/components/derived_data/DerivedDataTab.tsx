@@ -19,6 +19,7 @@ import {
 } from "../../hooks/usePricing";
 import type {
   VolSurface,
+  VolSmileParams,
   CurveData,
   DividendCurve,
   CorrelationMatrix,
@@ -33,6 +34,25 @@ const SECTIONS: { id: DerivedSection; label: string }[] = [
   { id: "repo", label: "Repo Curve" },
   { id: "correlation", label: "Correlation" },
 ];
+
+function evaluateVolSmile(
+  params: VolSmileParams,
+  strikes: number[],
+  spot: number
+): number[] {
+  return strikes.map((k) => {
+    const m = Math.log(k / spot);
+    return (
+      params.atm_vol +
+      params.skew * m +
+      params.c1 * m * m +
+      params.c2 * m * m * m +
+      params.c3 * m * m * m * m +
+      params.c4 * m * m * m * m * m +
+      params.c5 * m * m * m * m * m * m
+    );
+  });
+}
 
 export function DerivedDataTab() {
   const [activeSection, setActiveSection] = useState<DerivedSection>("volatility");
@@ -52,6 +72,21 @@ export function DerivedDataTab() {
     fetchCorrelationMatrix().then(setCorrelationMatrix).catch(console.error);
     fetchCorrelationEntries().then(setCorrelationEntries).catch(console.error);
   }, []);
+
+  const handleParamChange = (
+    smileIndex: number,
+    paramKey: keyof VolSmileParams,
+    value: number
+  ) => {
+    if (!volSurface) return;
+    const updated = { ...volSurface };
+    const smile = { ...updated.smiles[smileIndex] };
+    smile.params = { ...smile.params, [paramKey]: value };
+    smile.vols = evaluateVolSmile(smile.params, smile.strikes, volSurface.spot);
+    updated.smiles = [...updated.smiles];
+    updated.smiles[smileIndex] = smile;
+    setVolSurface(updated);
+  };
 
   const divColumns: Column<CorrelationEntry>[] = [
     { key: "asset1", header: "Asset 1", align: "left" },
@@ -103,6 +138,137 @@ export function DerivedDataTab() {
 
               {volSurface && (
                 <>
+                  {volSurface.smiles.some((s) => s.params) && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-slate-400 mb-3">
+                      Smile Parameters
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-700">
+                            <th className="px-3 py-2 text-left text-xs font-medium text-slate-400 uppercase">
+                              Tenor
+                            </th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase">
+                              ATM Vol
+                            </th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase">
+                              Skew
+                            </th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase">
+                              c1
+                            </th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase">
+                              c2
+                            </th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase">
+                              c3
+                            </th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase">
+                              c4
+                            </th>
+                            <th className="px-3 py-2 text-right text-xs font-medium text-slate-400 uppercase">
+                              c5
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {volSurface.smiles.map((smile, smileIdx) => (
+                            <tr
+                              key={smile.tenor}
+                              className="border-b border-slate-800 hover:bg-slate-700/30"
+                            >
+                              <td className="px-3 py-1 font-mono text-slate-300">
+                                {smile.tenor < 1
+                                  ? `${(smile.tenor * 12).toFixed(0)}M`
+                                  : `${smile.tenor.toFixed(0)}Y`}
+                              </td>
+                              <td className="px-3 py-1">
+                                <input
+                                  type="number"
+                                  step={0.1}
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  value={+(smile.params.atm_vol * 100).toFixed(1)}
+                                  onChange={(e) =>
+                                    handleParamChange(smileIdx, "atm_vol", (parseFloat(e.target.value) || 0) / 100)
+                                  }
+                                />
+                              </td>
+                              <td className="px-3 py-1">
+                                <input
+                                  type="number"
+                                  step={0.01}
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  value={smile.params.skew}
+                                  onChange={(e) =>
+                                    handleParamChange(smileIdx, "skew", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-3 py-1">
+                                <input
+                                  type="number"
+                                  step={0.01}
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  value={smile.params.c1}
+                                  onChange={(e) =>
+                                    handleParamChange(smileIdx, "c1", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-3 py-1">
+                                <input
+                                  type="number"
+                                  step={0.01}
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  value={smile.params.c2}
+                                  onChange={(e) =>
+                                    handleParamChange(smileIdx, "c2", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-3 py-1">
+                                <input
+                                  type="number"
+                                  step={0.01}
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  value={smile.params.c3}
+                                  onChange={(e) =>
+                                    handleParamChange(smileIdx, "c3", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-3 py-1">
+                                <input
+                                  type="number"
+                                  step={0.001}
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  value={smile.params.c4}
+                                  onChange={(e) =>
+                                    handleParamChange(smileIdx, "c4", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                              <td className="px-3 py-1">
+                                <input
+                                  type="number"
+                                  step={0.001}
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  value={smile.params.c5}
+                                  onChange={(e) =>
+                                    handleParamChange(smileIdx, "c5", parseFloat(e.target.value) || 0)
+                                  }
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  )}
+
                   <div className="mb-6">
                     <h3 className="text-sm font-medium text-slate-400 mb-3">
                       Vol Smile / Skew

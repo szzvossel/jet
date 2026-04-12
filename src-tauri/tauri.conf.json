@@ -5,7 +5,9 @@
   "identifier": "com.jet.analytics",
   "build": {
     "beforeBuildCommand": "cd ../frontend && npm run build",
-    "frontendDist": "../frontend/dist"
+    "beforeDevCommand": "cd ../frontend && npm run dev",
+    "frontendDist": "../frontend/dist",
+    "devUrl": "http://localhost:1420"
   },
   "app": {
     "withGlobalTauri": false,
@@ -17,7 +19,8 @@
         "minWidth": 800,
         "minHeight": 600,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "devtools": true
       }
     ],
     "security": {

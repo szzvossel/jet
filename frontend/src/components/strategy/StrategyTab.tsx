@@ -6,39 +6,17 @@
  * and Greeks in a grid.
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { StrategyInput } from "./StrategyInput";
 import { StrategyGrid } from "./StrategyGrid";
-import { priceStrategy, setBackend } from "../../hooks/usePricing";
-import type { BackendMode } from "../../hooks/usePricing";
+import { priceStrategy } from "../../hooks/usePricing";
 import { NumberDisplay } from "../shared/NumberDisplay";
 import type { PricedStrategyResult } from "../../types";
-
-const BACKEND_KEY = "jet-backend-mode";
-const REMOTE_URL_KEY = "jet-remote-url";
 
 export function StrategyTab() {
   const [result, setResult] = useState<PricedStrategyResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Backend selector state, initialized from localStorage
-  const [backendMode, setBackendMode] = useState<BackendMode>(() => {
-    return (localStorage.getItem(BACKEND_KEY) as BackendMode) || "local";
-  });
-  const [remoteUrl, setRemoteUrl] = useState<string>(
-    () => localStorage.getItem(REMOTE_URL_KEY) || "http://localhost:3000",
-  );
-
-  // Apply backend on mount and when it changes
-  useEffect(() => {
-    setBackend(backendMode, remoteUrl);
-    localStorage.setItem(BACKEND_KEY, backendMode);
-  }, [backendMode, remoteUrl]);
-
-  useEffect(() => {
-    localStorage.setItem(REMOTE_URL_KEY, remoteUrl);
-  }, [remoteUrl]);
 
   const handleParse = async (input: string) => {
     setLoading(true);
@@ -57,47 +35,6 @@ export function StrategyTab() {
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Backend Selector */}
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-slate-400 uppercase tracking-wider text-xs">
-            Backend
-          </span>
-          <div className="flex rounded-lg border border-slate-600 overflow-hidden">
-            <button
-              onClick={() => setBackendMode("local")}
-              className={`px-3 py-1 text-xs font-medium transition-colors ${
-                backendMode === "local"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Local
-            </button>
-            <button
-              onClick={() => setBackendMode("remote")}
-              className={`px-3 py-1 text-xs font-medium transition-colors ${
-                backendMode === "remote"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              Remote
-            </button>
-          </div>
-          {backendMode === "remote" && (
-            <input
-              type="text"
-              value={remoteUrl}
-              onChange={(e) => setRemoteUrl(e.target.value)}
-              placeholder="http://localhost:3000"
-              className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-slate-200 w-56 focus:outline-none focus:border-indigo-500"
-            />
-          )}
-          <span className="text-slate-500 text-xs">
-            {backendMode === "local" ? "Tauri IPC" : `HTTP → ${remoteUrl}`}
-          </span>
-        </div>
-
         {error && (
           <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg text-sm">
             {error}
