@@ -2,9 +2,10 @@
  * Payoff diagram using HTML Canvas.
  *
  * Renders the option price curve and payoff at expiry on a canvas element.
+ * Uses ResizeObserver to auto-fit the container width.
  */
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 interface DataPoint {
   spot: number;
@@ -17,7 +18,6 @@ interface Props {
   optionType: "Call" | "Put";
 }
 
-const WIDTH = 600;
 const HEIGHT = 360;
 const PADDING = { top: 30, right: 30, bottom: 50, left: 70 };
 
@@ -27,14 +27,34 @@ export const PayoffChart: React.FC<Props> = ({
   optionType,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
 
+  // Measure container width reactively
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const update = () => {
+      const w = container.clientWidth;
+      if (w > 0) setCanvasWidth(w);
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Draw whenever data or canvas size changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || priceCurve.length === 0) return;
+    if (!canvas || priceCurve.length === 0 || canvasWidth === 0) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const WIDTH = canvasWidth;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = WIDTH * dpr;
     canvas.height = HEIGHT * dpr;
@@ -60,7 +80,8 @@ export const PayoffChart: React.FC<Props> = ({
 
     const minSpot = Math.min(...spots);
     const maxSpot = Math.max(...spots);
-    const maxVal = Math.max(Math.max(...prices), Math.max(...payoffs)) * 1.1;
+    const maxVal =
+      Math.max(Math.max(...prices), Math.max(...payoffs)) * 1.1;
     const minVal = Math.min(0, Math.min(...prices)) * 1.1;
 
     const xScale = (v: number) =>
@@ -188,18 +209,20 @@ export const PayoffChart: React.FC<Props> = ({
     ctx.setLineDash([]);
     ctx.fillStyle = "#94a3b8";
     ctx.fillText("Payoff at Expiry", legendX + 26, legendY + 32);
-  }, [priceCurve, strike, optionType]);
+  }, [priceCurve, strike, optionType, canvasWidth]);
 
   return (
     <div className="bg-slate-800 rounded-lg p-6">
       <h2 className="text-xl font-semibold text-slate-100 mb-4">
         Payoff Diagram
       </h2>
-      <canvas
-        ref={canvasRef}
-        style={{ width: WIDTH, height: HEIGHT }}
-        className="rounded"
-      />
+      <div ref={containerRef} className="w-full">
+        <canvas
+          ref={canvasRef}
+          style={{ height: HEIGHT }}
+          className="rounded w-full"
+        />
+      </div>
     </div>
   );
 };

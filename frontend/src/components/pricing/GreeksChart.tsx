@@ -2,16 +2,16 @@
  * Greeks profile chart using HTML Canvas.
  *
  * Renders delta, gamma, vega, and theta across a range of spot prices.
+ * Uses ResizeObserver to auto-fit the container width.
  */
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import type { GreeksCurveResult } from "../../types";
 
 interface Props {
   data: GreeksCurveResult | null;
 }
 
-const WIDTH = 600;
 const HEIGHT = 360;
 const PADDING = { top: 30, right: 30, bottom: 50, left: 70 };
 
@@ -23,14 +23,34 @@ interface Series {
 
 export const GreeksChart: React.FC<Props> = ({ data }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
 
+  // Measure container width reactively
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const update = () => {
+      const w = container.clientWidth;
+      if (w > 0) setCanvasWidth(w);
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Draw whenever data or canvas size changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !data || data.spots.length === 0) return;
+    if (!canvas || !data || data.spots.length === 0 || canvasWidth === 0) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const WIDTH = canvasWidth;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = WIDTH * dpr;
     canvas.height = HEIGHT * dpr;
@@ -155,31 +175,27 @@ export const GreeksChart: React.FC<Props> = ({ data }) => {
       ctx.fillText(s.label, legendX + 20, legendY + 10);
       legendX += 80;
     }
-  }, [data]);
+  }, [data, canvasWidth]);
 
-  if (!data) {
-    return (
-      <div className="bg-slate-800 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-slate-100 mb-4">
-          Greeks Profile
-        </h2>
-        <p className="text-slate-500 italic">
-          Calculate a price to see Greeks across spot prices.
-        </p>
-      </div>
-    );
-  }
+  const hasData = data !== null && data.spots.length > 0;
 
   return (
     <div className="bg-slate-800 rounded-lg p-6">
       <h2 className="text-xl font-semibold text-slate-100 mb-4">
         Greeks Profile
       </h2>
-      <canvas
-        ref={canvasRef}
-        style={{ width: WIDTH, height: HEIGHT }}
-        className="rounded"
-      />
+      {!hasData && (
+        <p className="text-slate-500 italic">
+          Calculate a price to see Greeks across spot prices.
+        </p>
+      )}
+      <div ref={containerRef} className="w-full" style={{ display: hasData ? "block" : "none" }}>
+        <canvas
+          ref={canvasRef}
+          style={{ height: HEIGHT }}
+          className="rounded w-full"
+        />
+      </div>
     </div>
   );
 };

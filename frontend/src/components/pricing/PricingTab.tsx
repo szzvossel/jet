@@ -4,7 +4,7 @@
  * Extracted from original App.tsx. Option strategy builder and BSM pricing engine.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { OptionInput } from "./OptionInput";
 import { ResultPanel } from "./ResultPanel";
 import { PayoffChart } from "./PayoffChart";
@@ -38,8 +38,10 @@ export function PricingTab() {
   >([]);
   const [greeksData, setGreeksData] = useState<GreeksCurveResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const hasPricedOnce = useRef(false);
 
   const handlePrice = useCallback(async () => {
+    hasPricedOnce.current = true;
     setError(null);
     try {
       const pricingResult = await priceOption(contract, market);
@@ -61,6 +63,12 @@ export function PricingTab() {
       setError(String(e));
     }
   }, [contract, market]);
+
+  // Auto-price whenever parameters change (after first manual click)
+  useEffect(() => {
+    if (!hasPricedOnce.current) return;
+    handlePrice();
+  }, [handlePrice]);
 
   return (
     <div className="p-6">
