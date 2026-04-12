@@ -23,6 +23,8 @@ import type {
   StrategyParseResult,
   PricedStrategyResult,
   StrategyMarketAssumptions,
+  TracerKpis,
+  LogEventList,
 } from "../types";
 
 // ---------------------------------------------------------------------------
@@ -165,4 +167,21 @@ export async function priceStrategy(
 ): Promise<PricedStrategyResult> {
   logRoute("priceStrategy");
   return backend.priceStrategy(input, assumptions);
+}
+
+// ---------------------------------------------------------------------------
+// Tracer — Log Monitoring
+// ---------------------------------------------------------------------------
+
+export async function fetchTracerKpis(): Promise<TracerKpis> {
+  logRoute("fetchTracerKpis");
+  return backend.fetchTracerKpis();
+}
+
+export async function fetchTracerEvents(
+  page: number,
+  pageSize: number,
+): Promise<LogEventList> {
+  logRoute("fetchTracerEvents");
+  return backend.fetchTracerEvents(page, pageSize);
 }

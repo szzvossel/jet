@@ -12,6 +12,7 @@ import { DerivedDataTab } from "./components/derived_data/DerivedDataTab";
 import { StrategyTab } from "./components/strategy/StrategyTab";
 import { RiskTab } from "./components/risk/RiskTab";
 import { PnLTab } from "./components/pnl/PnLTab";
+import { TracerTab } from "./components/tracer/TracerTab";
 
 const TABS = [
   { id: "strategy", label: "Option Strategy" },
@@ -19,6 +20,7 @@ const TABS = [
   { id: "derived", label: "Derived Data Marking" },
   { id: "risk", label: "Risk View" },
   { id: "pnl", label: "P&L Explanation" },
+  { id: "tracer", label: "Tracer" },
 ];
 
 function App() {
@@ -41,6 +43,8 @@ function App() {
         return <RiskTab />;
       case "pnl":
         return <PnLTab />;
+      case "tracer":
+        return <TracerTab />;
       default:
         return <StrategyTab />;
     }

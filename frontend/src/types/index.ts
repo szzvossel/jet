@@ -228,3 +228,69 @@ export interface StrategyMarketAssumptions {
   rate: number;
   div_yield: number;
 }
+
+// ---------------------------------------------------------------------------
+// Tracer types — Log Monitoring
+// ---------------------------------------------------------------------------
+
+export type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR";
+
+export interface LogEvent {
+  timestamp: string;
+  level: LogLevel;
+  target: string;
+  thread_id: string;
+  source_name: string;
+  message: string;
+  tracer_id: number | null;
+  elapsed_ms: number | null;
+  raw_line: string;
+}
+
+export interface LogLevelDistribution {
+  trace: number;
+  debug: number;
+  info: number;
+  warn: number;
+  error: number;
+}
+
+export interface LatencyStats {
+  min_ms: number | null;
+  max_ms: number | null;
+  avg_ms: number | null;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  p99_ms: number | null;
+  sample_count: number;
+}
+
+export interface ThroughputPoint {
+  bucket: string;
+  count: number;
+}
+
+export interface SourceStats {
+  source: string;
+  total_events: number;
+  error_count: number;
+  level_distribution: LogLevelDistribution;
+  latency: LatencyStats;
+}
+
+export interface TracerKpis {
+  total_events: number;
+  error_rate: number;
+  level_distribution: LogLevelDistribution;
+  latency: LatencyStats;
+  throughput: ThroughputPoint[];
+  sources: SourceStats[];
+  monitored_files: string[];
+  last_updated: string;
+}
+
+export interface LogEventList {
+  events: LogEvent[];
+  total_count: number;
+  has_more: boolean;
+}

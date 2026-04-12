@@ -1,14 +1,17 @@
 /// JET Server — Axum HTTP API for the JET pricing engine.
 ///
-/// Exposes the same 12 operations as the Tauri IPC commands as REST endpoints.
-/// All business logic is delegated to `jet_core`.
+/// Exposes the same 12 operations as the Tauri IPC commands as REST endpoints,
+/// plus 2 tracer endpoints for log monitoring.
+/// All business logic is delegated to `jet_core` and `jet_tracer`.
 
 use axum::{
+    extract::State,
     http::StatusCode,
     routing::{get, post},
     Json, Router,
 };
 use serde::Deserialize;
+use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 
 // ---------------------------------------------------------------------------
@@ -113,11 +116,49 @@ async fn price_strategy(
 }
 
 // ---------------------------------------------------------------------------
+// Shared application state (for tracer)
+// ---------------------------------------------------------------------------
+
+struct AppState {
+    tracer_state: Arc<tokio::sync::RwLock<jet_tracer::TracerState>>,
+}
+
+// ---------------------------------------------------------------------------
+// Tracer route handlers
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+struct EventQueryParams {
+    page: Option<usize>,
+    page_size: Option<usize>,
+}
+
+async fn tracer_kpis(
+    State(state): State<Arc<AppState>>,
+) -> Json<jet_tracer::TracerKpis> {
+    Json(jet_tracer::get_kpis(&state.tracer_state).await)
+}
+
+async fn tracer_events(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Query(params): axum::extract::Query<EventQueryParams>,
+) -> Json<jet_tracer::LogEventList> {
+    let page = params.page.unwrap_or(0);
+    let page_size = params.page_size.unwrap_or(100);
+    Json(jet_tracer::get_events(&state.tracer_state, page, page_size).await)
+}
+
+// ---------------------------------------------------------------------------
 // App startup
 // ---------------------------------------------------------------------------
 
 #[tokio::main]
 async fn main() {
+    // Initialize tracer subsystem
+    let tracer_dir = std::path::PathBuf::from("data/tracer");
+    let tracer_state = jet_tracer::init_tracer(tracer_dir).await;
+    let app_state = Arc::new(AppState { tracer_state });
+
     let app = Router::new()
         .route("/api/price-option", post(price_option))
         .route("/api/price-curve", post(price_curve))
@@ -131,6 +172,9 @@ async fn main() {
         .route("/api/pnl-attribution", get(pnl_attribution))
         .route("/api/parse-strategy", post(parse_strategy))
         .route("/api/price-strategy", post(price_strategy))
+        .route("/api/tracer/kpis", get(tracer_kpis))
+        .route("/api/tracer/events", get(tracer_events))
+        .with_state(app_state)
         .layer(CorsLayer::permissive());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")

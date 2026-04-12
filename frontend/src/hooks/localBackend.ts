@@ -21,6 +21,8 @@ import type {
   StrategyParseResult,
   PricedStrategyResult,
   StrategyMarketAssumptions,
+  TracerKpis,
+  LogEventList,
 } from "../types";
 
 export const localBackend = {
@@ -62,4 +64,9 @@ export const localBackend = {
 
   priceStrategy: (input: string, assumptions?: StrategyMarketAssumptions) =>
     invoke<PricedStrategyResult>("price_strategy", { input, assumptions }),
+
+  fetchTracerKpis: () => invoke<TracerKpis>("tracer_get_kpis"),
+
+  fetchTracerEvents: (page: number, pageSize: number) =>
+    invoke<LogEventList>("tracer_get_events", { page, pageSize }),
 };

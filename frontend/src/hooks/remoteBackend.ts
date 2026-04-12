@@ -20,6 +20,8 @@ import type {
   StrategyParseResult,
   PricedStrategyResult,
   StrategyMarketAssumptions,
+  TracerKpis,
+  LogEventList,
 } from "../types";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -94,5 +96,12 @@ export function createRemoteBackend(baseUrl: string) {
         input,
         assumptions: assumptions ?? null,
       }),
+
+    fetchTracerKpis: () => getJson<TracerKpis>(`${base}/api/tracer/kpis`),
+
+    fetchTracerEvents: (page: number, pageSize: number) =>
+      getJson<LogEventList>(
+        `${base}/api/tracer/events?page=${page}&page_size=${pageSize}`,
+      ),
   };
 }

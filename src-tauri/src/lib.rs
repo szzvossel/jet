@@ -1,14 +1,26 @@
 /// JET - Equity Derivatives Analytics.
 ///
 /// Tauri library module. Thin IPC shell that delegates all business logic
-/// to `jet_core`.
+/// to `jet_core` and `jet_tracer`.
 
 use jet_core::pricing;
 use jet_core::analytics;
 use jet_core::parsing;
 
+use std::sync::Arc;
+use tauri::Manager;
+
 // Re-export shared types for convenience
 pub use jet_core::{PricePoint, GreeksCurveResult, GreeksCurveRequest, PositionRisk, RiskSummary};
+
+// ---------------------------------------------------------------------------
+// Tracer managed state
+// ---------------------------------------------------------------------------
+
+/// Wrapper for the tracer state handle, managed by Tauri.
+struct TracerStateHandle {
+    state: Arc<tokio::sync::RwLock<jet_tracer::TracerState>>,
+}
 
 // ---------------------------------------------------------------------------
 // Tauri IPC Commands — Pricing
@@ -115,13 +127,46 @@ fn price_strategy(
 }
 
 // ---------------------------------------------------------------------------
+// Tauri IPC Commands — Tracer (Log Monitoring)
+// ---------------------------------------------------------------------------
+
+/// Fetch current tracer KPIs.
+#[tauri::command]
+async fn tracer_get_kpis(
+    state: tauri::State<'_, TracerStateHandle>,
+) -> Result<jet_tracer::TracerKpis, String> {
+    Ok(jet_tracer::get_kpis(&state.state).await)
+}
+
+/// Fetch a paginated list of log events (newest first).
+#[tauri::command]
+async fn tracer_get_events(
+    state: tauri::State<'_, TracerStateHandle>,
+    page: Option<usize>,
+    page_size: Option<usize>,
+) -> Result<jet_tracer::LogEventList, String> {
+    let p = page.unwrap_or(0);
+    let ps = page_size.unwrap_or(100);
+    Ok(jet_tracer::get_events(&state.state, p, ps).await)
+}
+
+// ---------------------------------------------------------------------------
 // App setup
 // ---------------------------------------------------------------------------
 
 /// Build and run the Tauri application.
 pub fn run() {
+    let tracer_dir = std::path::PathBuf::from("../data/tracer");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .setup(move |app| {
+            let tracer_state = tauri::async_runtime::block_on(
+                jet_tracer::init_tracer(tracer_dir)
+            );
+            app.manage(TracerStateHandle { state: tracer_state });
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             price_option,
             price_curve,
@@ -135,6 +180,8 @@ pub fn run() {
             get_pnl_attribution,
             parse_strategy,
             price_strategy,
+            tracer_get_kpis,
+            tracer_get_events,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

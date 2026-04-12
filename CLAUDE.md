@@ -46,6 +46,9 @@ cd frontend && npx tsc --noEmit
 # Build frontend only
 cd frontend && npm run build
 
+# Windows: after npm install, also run this to fix missing Rollup native binding
+cd frontend && npm install @rollup/rollup-win32-x64-msvc --save-optional
+
 # Run the HTTP API server only (no desktop app)
 cargo run -p jet-server
 
