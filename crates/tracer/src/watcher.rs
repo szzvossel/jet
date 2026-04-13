@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use tokio::sync::RwLock;
+use tokio::sync::{oneshot, RwLock};
 
 use crate::parser;
 use crate::state::TracerState;
@@ -26,19 +26,30 @@ impl LogWatcher {
         Self { watch_dir, state }
     }
 
+    /// Perform a one-time scan of all `*.log` files in the watch directory
+    /// without starting the background notify watcher.
+    pub async fn scan_once(self: &Arc<Self>) {
+        self.initial_scan().await;
+    }
+
     /// Start watching. Performs an initial scan of existing files, then spawns
     /// a background task for ongoing file monitoring.
-    pub async fn start(self: &Arc<Self>) {
+    ///
+    /// Returns a [`oneshot::Sender`] that can be used to shut down the background task.
+    pub async fn start(self: &Arc<Self>) -> oneshot::Sender<()> {
         // Initial scan of existing log files
         self.initial_scan().await;
 
-        // Set up the notify watcher
+        // Set up the notify watcher + shutdown channel
         let self_clone = Arc::clone(self);
         let watch_dir = self.watch_dir.clone();
+        let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
 
         tokio::spawn(async move {
-            self_clone.run_watcher(&watch_dir).await;
+            self_clone.run_watcher(&watch_dir, shutdown_rx).await;
         });
+
+        shutdown_tx
     }
 
     /// Read all existing *.log files in the watch directory.
@@ -119,8 +130,8 @@ impl LogWatcher {
         }
     }
 
-    /// Run the notify file watcher in a blocking loop.
-    async fn run_watcher(&self, watch_dir: &Path) {
+    /// Run the notify file watcher, exiting cleanly when the shutdown signal fires.
+    async fn run_watcher(&self, watch_dir: &Path, mut shutdown_rx: oneshot::Receiver<()>) {
         let (tx, mut rx) = tokio::sync::mpsc::channel::<Event>(256);
 
         let mut watcher = match RecommendedWatcher::new(
@@ -147,20 +158,36 @@ impl LogWatcher {
         // it will be dropped when the channel closes / task ends
         let _watcher_guard = watcher;
 
-        while let Some(event) = rx.recv().await {
-            match event.kind {
-                EventKind::Modify(_) | EventKind::Create(_) => {
-                    for path in &event.paths {
-                        if path.extension().and_then(|e| e.to_str()) == Some("log") {
-                            let offset = {
-                                let state = self.state.read().await;
-                                state.get_offset(path)
-                            };
-                            self.read_file_from(path, offset).await;
+        loop {
+            tokio::select! {
+                event = rx.recv() => {
+                    match event {
+                        Some(event) => {
+                            match event.kind {
+                                EventKind::Modify(_) | EventKind::Create(_) => {
+                                    for path in &event.paths {
+                                        if path.extension().and_then(|e| e.to_str()) == Some("log") {
+                                            let offset = {
+                                                let state = self.state.read().await;
+                                                state.get_offset(path)
+                                            };
+                                            self.read_file_from(path, offset).await;
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                        None => {
+                            // Channel closed, exit
+                            break;
                         }
                     }
                 }
-                _ => {}
+                _ = &mut shutdown_rx => {
+                    eprintln!("[tracer] shutdown signal received, stopping watcher");
+                    break;
+                }
             }
         }
     }

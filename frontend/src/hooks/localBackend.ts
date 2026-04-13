@@ -69,4 +69,8 @@ export const localBackend = {
 
   fetchTracerEvents: (page: number, pageSize: number) =>
     invoke<LogEventList>("tracer_get_events", { page, pageSize }),
+
+  setWatchDir: (path: string) => invoke<void>("tracer_set_watch_dir", { path }),
+
+  loadLogs: () => invoke<void>("tracer_load_logs"),
 };

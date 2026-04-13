@@ -1,8 +1,11 @@
-/// JSON log line parser.
+/// Dual-format log line parser.
 ///
-/// Parses JSON-structured log lines (JSONL format). Each line is a self-contained
-/// JSON object with fields: timestamp, level, target, thread_id, source, message,
-/// tracer_id, elapsed_ms.
+/// Parses either JSON-structured log lines (JSONL format) or plaintext
+/// space-delimited log lines. JSON is tried first as the fast path; if that
+/// fails the plaintext parser is used as a fallback.
+///
+/// Plaintext format:
+/// `<timestamp> <level> <thread_id> <source> <message...> [key=value ...]`
 
 use crate::types::{LogEvent, LogLevel};
 
@@ -25,14 +28,26 @@ struct JsonLogLine {
     elapsed_ms: Option<u64>,
 }
 
-/// Attempt to parse a single line as a JSON log event.
-/// Returns `None` if the line is empty or cannot be parsed as valid JSON.
+/// Attempt to parse a single log line.
+///
+/// Tries JSON first, then falls back to the plaintext format parser.
+/// Returns `None` if the line is empty or cannot be parsed by either method.
 pub fn parse_line(line: &str, file_name: &str) -> Option<LogEvent> {
     let trimmed = line.trim();
     if trimmed.is_empty() {
         return None;
     }
 
+    // Fast path: try JSON first.
+    if let Some(evt) = parse_json_line(trimmed, file_name) {
+        return Some(evt);
+    }
+
+    // Fallback: plaintext space-delimited format.
+    parse_plaintext_line(trimmed, file_name)
+}
+
+fn parse_json_line(trimmed: &str, file_name: &str) -> Option<LogEvent> {
     let parsed: JsonLogLine = serde_json::from_str(trimmed).ok()?;
 
     let level = parse_level(&parsed.level)?;
@@ -52,6 +67,98 @@ pub fn parse_line(line: &str, file_name: &str) -> Option<LogEvent> {
         elapsed_ms: parsed.elapsed_ms,
         raw_line: trimmed.to_string(),
     })
+}
+
+/// Parse a plaintext space-delimited log line.
+///
+/// Expected format:
+/// `2026-04-09T10:19:28.725399Z INFO main01 jet feed succeeded type=a,key=123,tracer_id=123456 elapsed_ms=200`
+fn parse_plaintext_line(trimmed: &str, _file_name: &str) -> Option<LogEvent> {
+    let parts: Vec<&str> = trimmed.splitn(5, ' ').collect();
+    if parts.len() < 5 {
+        return None;
+    }
+
+    let timestamp = parts[0].to_string();
+    let level = parse_level(parts[1])?;
+    let thread_id = parts[2].to_string();
+    let source = parts[3].to_string();
+    let message_part = parts[4];
+
+    let (message, tracer_id, elapsed_ms) = extract_message_and_kv(message_part);
+
+    Some(LogEvent {
+        timestamp,
+        level,
+        target: String::new(),
+        thread_id,
+        source_name: source,
+        message,
+        tracer_id,
+        elapsed_ms,
+        raw_line: trimmed.to_string(),
+    })
+}
+
+/// Extract the display message, tracer_id, and elapsed_ms from the trailing
+/// key=value portion of a plaintext log line.
+///
+/// Scans for `tracer_id=<digits>` and `elapsed_ms=<digits>` anywhere in the
+/// text. Matched k/v tokens are removed from the returned message.
+fn extract_message_and_kv(text: &str) -> (String, Option<u64>, Option<u64>) {
+    let mut tracer_id: Option<u64> = None;
+    let mut elapsed_ms: Option<u64> = None;
+
+    // Collect token ranges to remove so we can build the cleaned message.
+    let mut remove_ranges: Vec<(usize, usize)> = Vec::new();
+
+    for re in [
+        regex::Regex::new(r"\btracer_id=(\d+)").unwrap(),
+        regex::Regex::new(r"\belapsed_ms=(\d+)").unwrap(),
+    ]
+    .iter()
+    {
+        for cap in re.captures_iter(text) {
+            let m = cap.get(0).unwrap();
+            let value: u64 = cap.get(1).unwrap().as_str().parse().unwrap();
+
+            if re.as_str().contains("tracer_id") {
+                tracer_id = Some(value);
+            } else {
+                elapsed_ms = Some(value);
+            }
+
+            // Include any leading comma or whitespace so we don't leave dangling punctuation.
+            let mut start = m.start();
+            if start > 0 {
+                let prev = text.as_bytes()[start - 1];
+                if prev == b',' || prev == b' ' {
+                    start -= 1;
+                }
+            }
+            remove_ranges.push((start, m.end()));
+        }
+    }
+
+    if remove_ranges.is_empty() {
+        return (text.to_string(), tracer_id, elapsed_ms);
+    }
+
+    // Build the cleaned message by excluding matched ranges.
+    remove_ranges.sort_by_key(|r| r.0);
+    let mut result = String::with_capacity(text.len());
+    let mut cursor = 0;
+    for (start, end) in &remove_ranges {
+        if *start > cursor {
+            result.push_str(&text[cursor..*start]);
+        }
+        cursor = *end;
+    }
+    if cursor < text.len() {
+        result.push_str(&text[cursor..]);
+    }
+
+    (result.trim().to_string(), tracer_id, elapsed_ms)
 }
 
 fn parse_level(s: &str) -> Option<LogLevel> {
@@ -79,6 +186,8 @@ fn extract_source_name(file_name: &str) -> String {
 mod tests {
     use super::*;
 
+    // --- JSON tests (existing behaviour) ---
+
     #[test]
     fn test_parse_valid_json_line() {
         let line = r#"{"timestamp":"2026-04-09T10:19:28.725399Z","level":"INFO","target":"main","thread_id":"01","source":"jet","message":"computation succeeded","tracer_id":123456,"elapsed_ms":200}"#;
@@ -100,6 +209,69 @@ mod tests {
         assert_eq!(evt.elapsed_ms, None);
     }
 
+    // --- Plaintext tests (new behaviour) ---
+
+    #[test]
+    fn test_parse_plaintext_jet_info() {
+        let line = "2026-04-09T10:19:28.725399Z INFO main01 jet feed succeeded type=a,key=123,tracer_id=123456 elapsed_ms=200";
+        let evt = parse_line(line, "jet.2026-04-09.log").unwrap();
+        assert_eq!(evt.timestamp, "2026-04-09T10:19:28.725399Z");
+        assert_eq!(evt.level, LogLevel::Info);
+        assert_eq!(evt.thread_id, "main01");
+        assert_eq!(evt.source_name, "jet");
+        assert_eq!(evt.tracer_id, Some(123456));
+        assert_eq!(evt.elapsed_ms, Some(200));
+        assert_eq!(evt.message, "feed succeeded type=a,key=123");
+    }
+
+    #[test]
+    fn test_parse_plaintext_jet_error() {
+        let line = "2026-04-09T10:19:28.725399Z ERROR main02 jet feed succeeded type=b,key=345,tracer_id=123456 elapsed_ms=200";
+        let evt = parse_line(line, "jet.2026-04-09.log").unwrap();
+        assert_eq!(evt.level, LogLevel::Error);
+        assert_eq!(evt.thread_id, "main02");
+        assert_eq!(evt.tracer_id, Some(123456));
+        assert_eq!(evt.message, "feed succeeded type=b,key=345");
+    }
+
+    #[test]
+    fn test_parse_plaintext_kdb_info() {
+        let line = "2026-04-09T10:19:28.725399Z INFO main01 kdb feed succeeded type=a,key=123,tracer_id=123456 elapsed_ms=200";
+        let evt = parse_line(line, "kdb.2026-04-09.log").unwrap();
+        assert_eq!(evt.level, LogLevel::Info);
+        assert_eq!(evt.source_name, "kdb");
+        assert_eq!(evt.tracer_id, Some(123456));
+    }
+
+    #[test]
+    fn test_parse_plaintext_kdb_error() {
+        let line = "2026-04-09T10:19:28.725399Z ERROR main02 kdb feed succeeded type=b,key=345,tracer_id=123456 elapsed_ms=200";
+        let evt = parse_line(line, "kdb.2026-04-09.log").unwrap();
+        assert_eq!(evt.level, LogLevel::Error);
+        assert_eq!(evt.source_name, "kdb");
+    }
+
+    #[test]
+    fn test_parse_plaintext_no_kv() {
+        let line = "2026-04-09T10:00:00.000000Z WARN main01 jet something happened";
+        let evt = parse_line(line, "jet.2026-04-09.log").unwrap();
+        assert_eq!(evt.level, LogLevel::Warn);
+        assert_eq!(evt.message, "something happened");
+        assert_eq!(evt.tracer_id, None);
+        assert_eq!(evt.elapsed_ms, None);
+    }
+
+    #[test]
+    fn test_parse_plaintext_only_tracer_id() {
+        let line = "2026-04-09T10:00:00.000000Z INFO main01 kdb processing tracer_id=999";
+        let evt = parse_line(line, "kdb.2026-04-09.log").unwrap();
+        assert_eq!(evt.tracer_id, Some(999));
+        assert_eq!(evt.elapsed_ms, None);
+        assert_eq!(evt.message, "processing");
+    }
+
+    // --- Shared edge-case tests ---
+
     #[test]
     fn test_parse_empty_line() {
         assert!(parse_line("", "test.log").is_none());
@@ -107,7 +279,8 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_invalid_json() {
+    fn test_parse_invalid_json_falls_through_to_plaintext() {
+        // This is not valid JSON and also not a valid plaintext line (< 5 fields).
         assert!(parse_line("not json at all", "test.log").is_none());
     }
 

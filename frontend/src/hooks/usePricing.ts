@@ -185,3 +185,13 @@ export async function fetchTracerEvents(
   logRoute("fetchTracerEvents");
   return backend.fetchTracerEvents(page, pageSize);
 }
+
+export async function setWatchDir(path: string): Promise<void> {
+  logRoute("setWatchDir");
+  return backend.setWatchDir(path);
+}
+
+export async function loadLogs(): Promise<void> {
+  logRoute("loadLogs");
+  return backend.loadLogs();
+}

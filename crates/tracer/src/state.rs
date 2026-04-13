@@ -10,6 +10,8 @@ const MAX_EVENTS: usize = 10_000;
 
 /// In-memory tracer state, protected by `Arc<RwLock<..>>`.
 pub struct TracerState {
+    /// Current directory being watched.
+    pub watch_dir: PathBuf,
     /// Ring buffer of recent log events (newest at end).
     pub events: Vec<LogEvent>,
     /// Tracked file offsets: file_path -> (display_name, last_byte_offset).
@@ -17,8 +19,9 @@ pub struct TracerState {
 }
 
 impl TracerState {
-    pub fn new() -> Self {
+    pub fn new(watch_dir: PathBuf) -> Self {
         Self {
+            watch_dir,
             events: Vec::with_capacity(MAX_EVENTS),
             file_offsets: HashMap::new(),
         }
@@ -56,5 +59,11 @@ impl TracerState {
             .collect();
         names.sort();
         names
+    }
+
+    /// Clear all events and file offsets (used when switching directories).
+    pub fn clear(&mut self) {
+        self.events.clear();
+        self.file_offsets.clear();
     }
 }

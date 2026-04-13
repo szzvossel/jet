@@ -1,2 +1,2 @@
-{"timestamp":"2026-04-09T10:19:28.725399Z","level":"INFO","target":"main","thread_id":"01","source":"kdb","message":"kdb feed succeeded input=FeedInput{type:\"a\",keys:{\"b\":\"123\"}}","tracer_id":123456,"elapsed_ms":200}
-{"timestamp":"2026-04-09T10:19:28.725399Z","level":"ERROR","target":"main","thread_id":"02","source":"kdb","message":"kdb feed succeeded input=FeedInput{type:\"a\",keys:{\"b\":\"123\"}}","tracer_id":123456,"elapsed_ms":200}
+2026-04-09T10:19:28.725399Z INFO main01 kdb feed succeeded type=a,key=123,tracer_id=123456 elapsed_ms=200
+2026-04-09T10:19:28.725399Z ERROR main02 kdb feed succeeded type=b,key=345,tracer_id=123456 elapsed_ms=200

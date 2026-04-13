@@ -8,6 +8,7 @@ use jet_core::analytics;
 use jet_core::parsing;
 
 use std::sync::Arc;
+use std::path::PathBuf;
 use tauri::Manager;
 
 // Re-export shared types for convenience
@@ -17,9 +18,9 @@ pub use jet_core::{PricePoint, GreeksCurveResult, GreeksCurveRequest, PositionRi
 // Tracer managed state
 // ---------------------------------------------------------------------------
 
-/// Wrapper for the tracer state handle, managed by Tauri.
+/// Wrapper for the tracer handle, managed by Tauri.
 struct TracerStateHandle {
-    state: Arc<tokio::sync::RwLock<jet_tracer::TracerState>>,
+    handle: Arc<jet_tracer::TracerHandle>,
 }
 
 // ---------------------------------------------------------------------------
@@ -135,7 +136,7 @@ fn price_strategy(
 async fn tracer_get_kpis(
     state: tauri::State<'_, TracerStateHandle>,
 ) -> Result<jet_tracer::TracerKpis, String> {
-    Ok(jet_tracer::get_kpis(&state.state).await)
+    Ok(jet_tracer::get_kpis(&state.handle).await)
 }
 
 /// Fetch a paginated list of log events (newest first).
@@ -147,7 +148,25 @@ async fn tracer_get_events(
 ) -> Result<jet_tracer::LogEventList, String> {
     let p = page.unwrap_or(0);
     let ps = page_size.unwrap_or(100);
-    Ok(jet_tracer::get_events(&state.state, p, ps).await)
+    Ok(jet_tracer::get_events(&state.handle, p, ps).await)
+}
+
+/// Set a new watch directory for the tracer.
+#[tauri::command]
+async fn tracer_set_watch_dir(
+    state: tauri::State<'_, TracerStateHandle>,
+    path: String,
+) -> Result<(), String> {
+    let new_dir = PathBuf::from(&path);
+    jet_tracer::restart_tracer(&state.handle, new_dir).await
+}
+
+/// Trigger a one-time scan and start live monitoring of the current watch directory.
+#[tauri::command]
+async fn tracer_load_logs(
+    state: tauri::State<'_, TracerStateHandle>,
+) -> Result<(), String> {
+    jet_tracer::load_tracer(&state.handle).await
 }
 
 // ---------------------------------------------------------------------------
@@ -172,15 +191,16 @@ fn toggle_devtools(app: tauri::AppHandle) {
 
 /// Build and run the Tauri application.
 pub fn run() {
-    let tracer_dir = std::path::PathBuf::from("../data/tracer");
+    let tracer_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../data/tracer");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(move |app| {
-            let tracer_state = tauri::async_runtime::block_on(
+            let tracer_handle = tauri::async_runtime::block_on(
                 jet_tracer::init_tracer(tracer_dir)
             );
-            app.manage(TracerStateHandle { state: tracer_state });
+            app.manage(TracerStateHandle { handle: tracer_handle });
 
             Ok(())
         })
@@ -199,6 +219,8 @@ pub fn run() {
             price_strategy,
             tracer_get_kpis,
             tracer_get_events,
+            tracer_set_watch_dir,
+            tracer_load_logs,
             toggle_devtools,
         ])
         .run(tauri::generate_context!())

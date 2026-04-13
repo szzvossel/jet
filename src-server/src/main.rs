@@ -120,7 +120,7 @@ async fn price_strategy(
 // ---------------------------------------------------------------------------
 
 struct AppState {
-    tracer_state: Arc<tokio::sync::RwLock<jet_tracer::TracerState>>,
+    tracer_handle: Arc<jet_tracer::TracerHandle>,
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +136,7 @@ struct EventQueryParams {
 async fn tracer_kpis(
     State(state): State<Arc<AppState>>,
 ) -> Json<jet_tracer::TracerKpis> {
-    Json(jet_tracer::get_kpis(&state.tracer_state).await)
+    Json(jet_tracer::get_kpis(&state.tracer_handle).await)
 }
 
 async fn tracer_events(
@@ -145,7 +145,36 @@ async fn tracer_events(
 ) -> Json<jet_tracer::LogEventList> {
     let page = params.page.unwrap_or(0);
     let page_size = params.page_size.unwrap_or(100);
-    Json(jet_tracer::get_events(&state.tracer_state, page, page_size).await)
+    Json(jet_tracer::get_events(&state.tracer_handle, page, page_size).await)
+}
+
+// ---------------------------------------------------------------------------
+// Tracer — Set Watch Directory
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+struct SetWatchDirRequest {
+    path: String,
+}
+
+async fn tracer_set_watch_dir(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<SetWatchDirRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let new_dir = std::path::PathBuf::from(&req.path);
+    jet_tracer::restart_tracer(&state.tracer_handle, new_dir)
+        .await
+        .map(|_| Json(serde_json::json!({"ok": true})))
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))
+}
+
+async fn tracer_load_logs(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    jet_tracer::load_tracer(&state.tracer_handle)
+        .await
+        .map(|_| Json(serde_json::json!({"ok": true})))
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))
 }
 
 // ---------------------------------------------------------------------------
@@ -156,8 +185,8 @@ async fn tracer_events(
 async fn main() {
     // Initialize tracer subsystem
     let tracer_dir = std::path::PathBuf::from("data/tracer");
-    let tracer_state = jet_tracer::init_tracer(tracer_dir).await;
-    let app_state = Arc::new(AppState { tracer_state });
+    let tracer_handle = jet_tracer::init_tracer(tracer_dir).await;
+    let app_state = Arc::new(AppState { tracer_handle: tracer_handle });
 
     let app = Router::new()
         .route("/api/price-option", post(price_option))
@@ -174,6 +203,8 @@ async fn main() {
         .route("/api/price-strategy", post(price_strategy))
         .route("/api/tracer/kpis", get(tracer_kpis))
         .route("/api/tracer/events", get(tracer_events))
+        .route("/api/tracer/set-watch-dir", post(tracer_set_watch_dir))
+        .route("/api/tracer/load-logs", post(tracer_load_logs))
         .with_state(app_state)
         .layer(CorsLayer::permissive());
 

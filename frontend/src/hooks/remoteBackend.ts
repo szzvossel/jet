@@ -103,5 +103,10 @@ export function createRemoteBackend(baseUrl: string) {
       getJson<LogEventList>(
         `${base}/api/tracer/events?page=${page}&page_size=${pageSize}`,
       ),
+
+    setWatchDir: (path: string) =>
+      postJson<void>(`${base}/api/tracer/set-watch-dir`, { path }),
+
+    loadLogs: () => postJson<void>(`${base}/api/tracer/load-logs`, {}),
   };
 }
