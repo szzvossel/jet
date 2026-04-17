@@ -12,6 +12,109 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Default: current indigo theme (unchanged) */
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --brand-200: #c7d2fe;
+  --brand-300: #a5b4fc;
+  --brand-400: #818cf8;
+  --brand-500: #6366f1;
+  --brand-600: #4f46e5;
+  --brand-700: #4338ca;
+  --brand-800: #3730a3;
+  --brand-900: #312e81;
+
+  /* Surface palette — standard slate */
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+  --slate-950: 2 6 23;
+}
+
+[data-theme="765rs"] {
+  --brand-50:  #fefce8;
+  --brand-100: #fef9c3;
+  --brand-200: #fef08a;
+  --brand-300: #fde047;
+  --brand-400: #facc15;
+  --brand-500: #eab308;
+  --brand-600: #c9960c;
+  --brand-700: #a16207;
+  --brand-800: #854d0e;
+  --brand-900: #713f12;
+
+  /* Yellow-tinted surface palette */
+  --slate-50: 252 251 240;
+  --slate-100: 248 245 225;
+  --slate-200: 240 234 195;
+  --slate-300: 220 208 150;
+  --slate-400: 170 155 85;
+  --slate-500: 120 100 45;
+  --slate-600: 90 72 30;
+  --slate-700: 65 50 20;
+  --slate-800: 42 32 14;
+  --slate-900: 26 20 8;
+  --slate-950: 14 10 4;
+}
+
+[data-theme="v4s"] {
+  --brand-50: #fef2f2;
+  --brand-100: #fee2e2;
+  --brand-200: #fecaca;
+  --brand-300: #fca5a5;
+  --brand-400: #f87171;
+  --brand-500: #ef4444;
+  --brand-600: #cc0000;
+  --brand-700: #a30000;
+  --brand-800: #7f1d1d;
+  --brand-900: #450a0a;
+
+  /* Warm-red surface palette — Rosso Ducati */
+  --slate-50: 252 246 246;
+  --slate-100: 245 233 234;
+  --slate-200: 232 208 210;
+  --slate-300: 200 160 164;
+  --slate-400: 160 108 114;
+  --slate-500: 118 64 70;
+  --slate-600: 88 45 50;
+  --slate-700: 65 30 36;
+  --slate-800: 48 20 24;
+  --slate-900: 28 10 13;
+  --slate-950: 14 5 6;
+}
+
+[data-theme="r1m"] {
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #3b82f6;
+  --brand-600: #003399;
+  --brand-700: #002277;
+  --brand-800: #1e3a5f;
+  --brand-900: #0c1e3a;
+
+  /* Vivid-blue surface palette — Yamaha Racing Blue */
+  --slate-50: 244 249 254;
+  --slate-100: 232 240 248;
+  --slate-200: 208 220 235;
+  --slate-300: 155 185 210;
+  --slate-400: 100 140 178;
+  --slate-500: 60 90 140;
+  --slate-600: 42 66 108;
+  --slate-700: 28 48 82;
+  --slate-800: 18 34 60;
+  --slate-900: 8 18 38;
+  --slate-950: 3 8 18;
 }
 
 body {
@@ -31,16 +134,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: rgb(var(--slate-800));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: rgb(var(--slate-600));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: rgb(var(--slate-500));
 }
 
 /* ============================================================
@@ -216,7 +319,7 @@ body {
   left: 0;
   right: 0;
   height: 2px;
-  background-color: #4f46e5;
+  background-color: var(--brand-600);
 }
 
 /* ============================================================

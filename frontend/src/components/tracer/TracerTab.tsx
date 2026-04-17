@@ -76,13 +76,13 @@ export function TracerTab() {
             type="text"
             value={logDir}
             onChange={(e) => setLogDir(e.target.value)}
-            className="flex-1 bg-slate-700 text-slate-100 rounded px-3 py-1.5 text-sm border border-slate-600 focus:border-indigo-500 focus:outline-none"
+            className="flex-1 bg-slate-700 text-slate-100 rounded px-3 py-1.5 text-sm border border-slate-600 focus:border-brand-500 focus:outline-none"
             placeholder="/path/to/logs"
           />
           <button
             onClick={handleApply}
             disabled={loading || !logDir}
-            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded font-medium"
+            className="px-4 py-1.5 bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded font-medium"
           >
             Apply
           </button>
@@ -104,7 +104,7 @@ export function TracerTab() {
             <p className="text-slate-500 text-sm">
               Click <span className="text-emerald-400 font-medium">Load Logs</span> to scan the
               log folder, or enter a custom path and click{" "}
-              <span className="text-indigo-400 font-medium">Apply</span>.
+              <span className="text-brand-400 font-medium">Apply</span>.
             </p>
           </div>
         ) : !kpis ? (

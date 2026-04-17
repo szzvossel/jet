@@ -188,7 +188,7 @@ export function DerivedDataTab() {
                                 <input
                                   type="number"
                                   step={0.1}
-                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-brand-500 focus:outline-none"
                                   value={+(smile.params.atm_vol * 100).toFixed(1)}
                                   onChange={(e) =>
                                     handleParamChange(smileIdx, "atm_vol", (parseFloat(e.target.value) || 0) / 100)
@@ -199,7 +199,7 @@ export function DerivedDataTab() {
                                 <input
                                   type="number"
                                   step={0.01}
-                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-brand-500 focus:outline-none"
                                   value={smile.params.skew}
                                   onChange={(e) =>
                                     handleParamChange(smileIdx, "skew", parseFloat(e.target.value) || 0)
@@ -210,7 +210,7 @@ export function DerivedDataTab() {
                                 <input
                                   type="number"
                                   step={0.01}
-                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-brand-500 focus:outline-none"
                                   value={smile.params.c1}
                                   onChange={(e) =>
                                     handleParamChange(smileIdx, "c1", parseFloat(e.target.value) || 0)
@@ -221,7 +221,7 @@ export function DerivedDataTab() {
                                 <input
                                   type="number"
                                   step={0.01}
-                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-brand-500 focus:outline-none"
                                   value={smile.params.c2}
                                   onChange={(e) =>
                                     handleParamChange(smileIdx, "c2", parseFloat(e.target.value) || 0)
@@ -232,7 +232,7 @@ export function DerivedDataTab() {
                                 <input
                                   type="number"
                                   step={0.01}
-                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-brand-500 focus:outline-none"
                                   value={smile.params.c3}
                                   onChange={(e) =>
                                     handleParamChange(smileIdx, "c3", parseFloat(e.target.value) || 0)
@@ -243,7 +243,7 @@ export function DerivedDataTab() {
                                 <input
                                   type="number"
                                   step={0.001}
-                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-brand-500 focus:outline-none"
                                   value={smile.params.c4}
                                   onChange={(e) =>
                                     handleParamChange(smileIdx, "c4", parseFloat(e.target.value) || 0)
@@ -254,7 +254,7 @@ export function DerivedDataTab() {
                                 <input
                                   type="number"
                                   step={0.001}
-                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+                                  className="w-20 bg-slate-900 border border-slate-600 rounded px-2 py-0.5 text-right font-mono text-slate-200 focus:border-brand-500 focus:outline-none"
                                   value={smile.params.c5}
                                   onChange={(e) =>
                                     handleParamChange(smileIdx, "c5", parseFloat(e.target.value) || 0)
