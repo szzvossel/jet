@@ -92,29 +92,29 @@
 }
 
 [data-theme="r1m"] {
-  --brand-50: #eff6ff;
-  --brand-100: #dbeafe;
-  --brand-200: #bfdbfe;
-  --brand-300: #93c5fd;
-  --brand-400: #60a5fa;
-  --brand-500: #3b82f6;
-  --brand-600: #003399;
-  --brand-700: #002277;
-  --brand-800: #1e3a5f;
-  --brand-900: #0c1e3a;
+  --brand-50: #fef2f2;
+  --brand-100: #fde6e7;
+  --brand-200: #f9c5c7;
+  --brand-300: #f09396;
+  --brand-400: #e84449;
+  --brand-500: #E60012;
+  --brand-600: #c10010;
+  --brand-700: #96000c;
+  --brand-800: #6d0009;
+  --brand-900: #480006;
 
-  /* Vivid-blue surface palette — Yamaha Racing Blue */
-  --slate-50: 244 249 254;
-  --slate-100: 232 240 248;
-  --slate-200: 208 220 235;
-  --slate-300: 155 185 210;
-  --slate-400: 100 140 178;
-  --slate-500: 60 90 140;
-  --slate-600: 42 66 108;
-  --slate-700: 28 48 82;
-  --slate-800: 18 34 60;
-  --slate-900: 8 18 38;
-  --slate-950: 3 8 18;
+  /* Yamaha Racing Red surface palette — warm dark tones */
+  --slate-50: 252 247 247;
+  --slate-100: 247 238 238;
+  --slate-200: 235 218 219;
+  --slate-300: 210 180 182;
+  --slate-400: 165 120 124;
+  --slate-500: 120 72 76;
+  --slate-600: 88 48 52;
+  --slate-700: 65 32 37;
+  --slate-800: 44 20 25;
+  --slate-900: 28 10 15;
+  --slate-950: 14 5 8;
 }
 
 body {
