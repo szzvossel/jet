@@ -80,8 +80,8 @@ pub fn compute_time_to_expiry(expiry_str: &str) -> Result<f64, String> {
         .map_err(|e| format!("Invalid expiry '{}': {}", expiry_str, e))?;
     let today = chrono::Local::now().date_naive();
     let days = (expiry - today).num_days();
-    if days <= 0 {
-        return Err(format!("Expiry {} is today or in the past", expiry_str));
+    if days < 0 {
+        return Err(format!("Expiry {} is in the past", expiry_str));
     }
     Ok(days as f64 / 365.25)
 }

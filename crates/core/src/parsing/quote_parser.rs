@@ -393,12 +393,12 @@ mod tests {
 
     #[test]
     fn test_basic_format() {
-        let result = parse_strategy("SPX apr26 110% Call A").unwrap();
+        let result = parse_strategy("SPX may26 110% Call A").unwrap();
         assert_eq!(result.strategy_name, "Single Option");
         assert_eq!(result.legs.len(), 1);
         let leg = &result.legs[0];
         assert_eq!(leg.symbol, "SPX");
-        assert_eq!(leg.expiry, "2026-04-17");
+        assert_eq!(leg.expiry, "2026-05-15");
         assert!((leg.strike - 6050.0).abs() < 0.01);
         assert!((leg.strike_pct - 110.0).abs() < 0.01);
         assert_eq!(leg.option_type, OptionKind::Call);
@@ -409,7 +409,7 @@ mod tests {
 
     #[test]
     fn test_absolute_strike() {
-        let result = parse_strategy("SPX apr26 5500 Call E").unwrap();
+        let result = parse_strategy("SPX may26 5500 Call E").unwrap();
         let leg = &result.legs[0];
         assert!((leg.strike - 5500.0).abs() < 0.01);
         assert_eq!(leg.style, ExerciseStyle::European);
@@ -417,17 +417,17 @@ mod tests {
 
     #[test]
     fn test_iso_date() {
-        let result = parse_strategy("SPX 2026-04-18 110% C A").unwrap();
+        let result = parse_strategy("SPX 2026-05-15 110% C A").unwrap();
         let leg = &result.legs[0];
-        assert_eq!(leg.expiry, "2026-04-18");
+        assert_eq!(leg.expiry, "2026-05-15");
         assert_eq!(leg.option_type, OptionKind::Call);
     }
 
     #[test]
     fn test_dd_mon_yy_date() {
-        let result = parse_strategy("SPX 18Apr26 110% Call A").unwrap();
+        let result = parse_strategy("SPX 15May26 110% Call A").unwrap();
         let leg = &result.legs[0];
-        assert_eq!(leg.expiry, "2026-04-18");
+        assert_eq!(leg.expiry, "2026-05-15");
     }
 
     #[test]
@@ -443,7 +443,7 @@ mod tests {
 
     #[test]
     fn test_multi_leg_strangle() {
-        let result = parse_strategy("SPX apr26 +1 110%C A / -1 100%P A").unwrap();
+        let result = parse_strategy("SPX may26 +1 110%C A / -1 100%P A").unwrap();
         assert_eq!(result.legs.len(), 2);
         assert_eq!(result.strategy_name, "Strangle");
 
@@ -462,26 +462,26 @@ mod tests {
 
     #[test]
     fn test_straddle() {
-        let result = parse_strategy("SPX apr26 +1 110%C A / -1 110%P A").unwrap();
+        let result = parse_strategy("SPX may26 +1 110%C A / -1 110%P A").unwrap();
         assert_eq!(result.strategy_name, "Straddle");
     }
 
     #[test]
     fn test_bull_call_spread() {
-        let result = parse_strategy("SPX apr26 +1 100%C A / -1 110%C A").unwrap();
+        let result = parse_strategy("SPX may26 +1 100%C A / -1 110%C A").unwrap();
         assert_eq!(result.strategy_name, "Bull Call Spread");
     }
 
     #[test]
     fn test_bear_put_spread() {
-        let result = parse_strategy("SPX apr26 +1 110%P A / -1 100%P A").unwrap();
+        let result = parse_strategy("SPX may26 +1 110%P A / -1 100%P A").unwrap();
         assert_eq!(result.strategy_name, "Bear Put Spread");
     }
 
     #[test]
     fn test_iron_condor() {
         let result = parse_strategy(
-            "SPX apr26 -1 105%C A / +1 110%C A / -1 95%P A / +1 90%P A"
+            "SPX may26 -1 105%C A / +1 110%C A / -1 95%P A / +1 90%P A"
         ).unwrap();
         assert_eq!(result.strategy_name, "Iron Condor");
         assert_eq!(result.legs.len(), 4);
@@ -489,7 +489,7 @@ mod tests {
 
     #[test]
     fn test_unknown_symbol() {
-        let result = parse_strategy("AAPL apr26 110% Call A");
+        let result = parse_strategy("AAPL may26 110% Call A");
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Unknown symbol"));
     }
@@ -503,21 +503,21 @@ mod tests {
 
     #[test]
     fn test_missing_strike() {
-        let result = parse_strategy("SPX apr26 Call A");
+        let result = parse_strategy("SPX may26 Call A");
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Missing strike"));
     }
 
     #[test]
     fn test_missing_type() {
-        let result = parse_strategy("SPX apr26 110% A");
+        let result = parse_strategy("SPX may26 110% A");
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Missing option type"));
     }
 
     #[test]
     fn test_strike_pct_attached_to_type() {
-        let result = parse_strategy("SPX apr26 110%C A").unwrap();
+        let result = parse_strategy("SPX may26 110%C A").unwrap();
         let leg = &result.legs[0];
         assert_eq!(leg.option_type, OptionKind::Call);
         assert!((leg.strike_pct - 110.0).abs() < 0.01);
@@ -525,7 +525,7 @@ mod tests {
 
     #[test]
     fn test_default_style_european() {
-        let result = parse_strategy("SPX apr26 110%C").unwrap();
+        let result = parse_strategy("SPX may26 110%C").unwrap();
         assert_eq!(result.legs[0].style, ExerciseStyle::European);
     }
 
