@@ -1,7 +1,8 @@
 /**
- * PricingTab — Quote Parsing & Pricing tab.
+ * PricingTab — Option Pricing tab.
  *
- * Extracted from original App.tsx. Option strategy builder and BSM pricing engine.
+ * Split layout: left sidebar for parameters, right area for results and charts.
+ * Auto-prices after first manual calculation.
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -71,15 +72,15 @@ export function PricingTab() {
   }, [handlePrice]);
 
   return (
-    <div className="p-6">
+    <div className="p-5">
       <div className="max-w-7xl mx-auto">
         {error && (
-          <div className="mb-4 bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+          <div className="mb-4 bg-red-900/30 border border-red-800/50 text-red-300 px-4 py-3 rounded-lg text-sm animate-fade-up">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left: Input Panel */}
           <div className="lg:col-span-3">
             <OptionInput
@@ -92,10 +93,16 @@ export function PricingTab() {
           </div>
 
           {/* Right: Results + Charts */}
-          <div className="lg:col-span-9 space-y-6">
-            <ResultPanel result={result} />
+          <div className="lg:col-span-9 space-y-5">
+            <ResultPanel
+              result={result}
+              optionType={contract.option_type}
+              strike={contract.strike}
+              timeToExpiry={contract.time_to_expiry}
+              spot={market.spot}
+            />
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
               <PayoffChart
                 priceCurve={curveData}
                 strike={contract.strike}

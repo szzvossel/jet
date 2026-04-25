@@ -67,86 +67,106 @@ export function TracerTab() {
   }, [logDir, refresh]);
 
   return (
-    <div className="p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="p-5">
+      <div className="max-w-7xl mx-auto space-y-5">
         {/* Config bar: log folder + load / apply buttons */}
-        <div className="bg-slate-800 rounded-lg p-4 flex items-center gap-3">
-          <label className="text-slate-300 text-sm font-medium">Log Folder</label>
+        <div className="surface-card-static p-3.5 flex items-center gap-3">
+          <label className="data-label shrink-0">Log Folder</label>
           <input
             type="text"
             value={logDir}
             onChange={(e) => setLogDir(e.target.value)}
-            className="flex-1 bg-slate-700 text-slate-100 rounded px-3 py-1.5 text-sm border border-slate-600 focus:border-brand-500 focus:outline-none"
+            className="flex-1 input-refined px-3 py-1.5 text-sm"
             placeholder="/path/to/logs"
           />
           <button
             onClick={handleApply}
             disabled={loading || !logDir}
-            className="px-4 py-1.5 bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded font-medium"
+            className="btn-primary px-4 py-1.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Apply
           </button>
           <button
             onClick={handleLoad}
             disabled={loading}
-            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded font-medium"
+            className="px-4 py-1.5 text-sm rounded font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: loading ? "rgba(34, 197, 94, 0.3)" : "rgba(34, 197, 94, 0.2)",
+              color: "#4ade80",
+              border: "1px solid rgba(34, 197, 94, 0.3)",
+            }}
           >
-            {loading ? "Loading..." : "Load Logs"}
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 border-2 border-green-400/40 border-t-green-400 rounded-full animate-spin" />
+                Loading...
+              </span>
+            ) : "Load Logs"}
           </button>
         </div>
+
         {error && (
-          <p className="text-red-400 text-sm">{error}</p>
+          <div className="surface-card-static p-3.5" style={{ borderLeft: "3px solid #ef4444" }}>
+            <p className="text-sm" style={{ color: "#f87171" }}>{error}</p>
+          </div>
         )}
 
         {!loaded ? (
-          <div className="bg-slate-800 rounded-lg p-8 text-center">
-            <p className="text-slate-400 text-lg mb-2">No logs loaded</p>
+          <div className="surface-card-static p-8 text-center animate-fade-up">
+            <div className="text-slate-400 text-lg mb-2">No logs loaded</div>
             <p className="text-slate-500 text-sm">
-              Click <span className="text-emerald-400 font-medium">Load Logs</span> to scan the
+              Click <span style={{ color: "#4ade80" }} className="font-medium">Load Logs</span> to scan the
               log folder, or enter a custom path and click{" "}
-              <span className="text-brand-400 font-medium">Apply</span>.
+              <span style={{ color: "#818cf8" }} className="font-medium">Apply</span>.
             </p>
           </div>
         ) : !kpis ? (
-          <p className="text-slate-500 italic">Loading tracer data...</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="surface-card-static p-3.5 animate-pulse">
+                <div className="h-2.5 bg-slate-700/50 rounded w-20 mb-3" />
+                <div className="h-5 bg-slate-700/40 rounded w-24" />
+              </div>
+            ))}
+          </div>
         ) : (
           <>
             {/* KPI summary cards */}
             <KpiCards kpis={kpis} />
 
             {/* Charts row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-slate-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-slate-100 mb-4">
-                  Log Level Distribution
-                </h2>
-                <LogLevelChart distribution={kpis.level_distribution} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="surface-card-static p-4 animate-fade-up">
+                <span className="data-label">Log Level Distribution</span>
+                <div className="mt-3">
+                  <LogLevelChart distribution={kpis.level_distribution} />
+                </div>
               </div>
-              <div className="bg-slate-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-slate-100 mb-4">
-                  Throughput (Events/min)
-                </h2>
-                <ThroughputChart throughput={kpis.throughput} />
+              <div className="surface-card-static p-4 animate-fade-up">
+                <span className="data-label">Throughput (Events/min)</span>
+                <div className="mt-3">
+                  <ThroughputChart throughput={kpis.throughput} />
+                </div>
               </div>
             </div>
 
             {/* Latency */}
-            <div className="bg-slate-800 rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-slate-100 mb-4">
-                Latency Statistics
-              </h2>
-              <LatencyChart latency={kpis.latency} />
+            <div className="surface-card-static p-4 animate-fade-up">
+              <span className="data-label">Latency Statistics</span>
+              <div className="mt-3">
+                <LatencyChart latency={kpis.latency} />
+              </div>
             </div>
 
             {/* Source breakdown */}
             <SourceBreakdown sources={kpis.sources} />
 
             {/* Log event table */}
-            <div className="bg-slate-800 rounded-lg p-6">
-              <h2 className="text-xl font-semibold text-slate-100 mb-4">
-                Recent Log Events
-              </h2>
-              <LogEventTable />
+            <div className="surface-card-static p-4 animate-fade-up">
+              <span className="data-label">Recent Log Events</span>
+              <div className="mt-3">
+                <LogEventTable />
+              </div>
             </div>
           </>
         )}

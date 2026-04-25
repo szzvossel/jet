@@ -16,12 +16,21 @@ const LEVEL_OPTIONS: Array<LogLevel | "ALL"> = [
   "TRACE",
 ];
 
-const LEVEL_BADGE_COLORS: Record<string, string> = {
-  TRACE: "bg-slate-700 text-slate-300",
-  DEBUG: "bg-blue-900 text-blue-300",
-  INFO: "bg-green-900 text-green-300",
-  WARN: "bg-yellow-900 text-yellow-300",
-  ERROR: "bg-red-900 text-red-300",
+const LEVEL_BADGE_STYLES: Record<string, { bg: string; text: string }> = {
+  TRACE: { bg: "rgba(71, 85, 105, 0.3)", text: "#94a3b8" },
+  DEBUG: { bg: "rgba(59, 130, 246, 0.15)", text: "#60a5fa" },
+  INFO: { bg: "rgba(34, 197, 94, 0.15)", text: "#4ade80" },
+  WARN: { bg: "rgba(234, 179, 8, 0.15)", text: "#facc15" },
+  ERROR: { bg: "rgba(239, 68, 68, 0.15)", text: "#f87171" },
+};
+
+const LEVEL_FILTER_COLORS: Record<string, string> = {
+  ALL: "#6366f1",
+  TRACE: "#64748b",
+  DEBUG: "#3b82f6",
+  INFO: "#22c55e",
+  WARN: "#eab308",
+  ERROR: "#ef4444",
 };
 
 const PAGE_SIZE = 50;
@@ -62,13 +71,17 @@ export const LogEventTable: React.FC = () => {
       key: "level",
       header: "Level",
       align: "center",
-      render: (val: LogLevel) => (
-        <span
-          className={`px-1.5 py-0.5 rounded text-xs font-semibold ${LEVEL_BADGE_COLORS[val] ?? "bg-slate-700 text-slate-300"}`}
-        >
-          {val}
-        </span>
-      ),
+      render: (val: LogLevel) => {
+        const style = LEVEL_BADGE_STYLES[val] ?? LEVEL_BADGE_STYLES.TRACE;
+        return (
+          <span
+            className="px-1.5 py-0.5 rounded text-xs font-semibold"
+            style={{ backgroundColor: style.bg, color: style.text }}
+          >
+            {val}
+          </span>
+        );
+      },
     },
     {
       key: "source_name",
@@ -100,22 +113,32 @@ export const LogEventTable: React.FC = () => {
   return (
     <div>
       {/* Filter bar */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-2 mb-3">
         <span className="text-xs text-slate-500">Filter:</span>
         {LEVEL_OPTIONS.map((level) => (
           <button
             key={level}
             onClick={() => setLevelFilter(level)}
-            className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
-              levelFilter === level
-                ? "bg-brand-600 text-white"
-                : "bg-slate-700 text-slate-400 hover:bg-slate-600"
-            }`}
+            className="px-2 py-1 text-xs rounded font-medium transition-all duration-150"
+            style={{
+              backgroundColor:
+                levelFilter === level
+                  ? (LEVEL_FILTER_COLORS[level] ?? "#6366f1") + "20"
+                  : "transparent",
+              color:
+                levelFilter === level
+                  ? LEVEL_FILTER_COLORS[level] ?? "#6366f1"
+                  : "#64748b",
+              border:
+                levelFilter === level
+                  ? `1px solid ${(LEVEL_FILTER_COLORS[level] ?? "#6366f1")}40`
+                  : "1px solid transparent",
+            }}
           >
             {level}
           </button>
         ))}
-        <span className="ml-auto text-xs text-slate-500">
+        <span className="ml-auto text-xs font-mono" style={{ color: "#64748b" }}>
           {filtered.length} of {totalCount} events
         </span>
       </div>
@@ -128,21 +151,31 @@ export const LogEventTable: React.FC = () => {
       />
 
       {/* Pagination */}
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-3">
         <button
           onClick={() => setPage(Math.max(0, page - 1))}
           disabled={page === 0}
-          className="px-3 py-1 text-xs bg-slate-700 text-slate-300 rounded hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1 text-xs rounded font-medium transition-all duration-150"
+          style={{
+            backgroundColor: page === 0 ? "rgba(30, 41, 59, 0.5)" : "rgba(51, 65, 85, 0.5)",
+            color: page === 0 ? "#475569" : "#cbd5e1",
+            cursor: page === 0 ? "not-allowed" : "pointer",
+          }}
         >
           Previous
         </button>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs font-mono" style={{ color: "#64748b" }}>
           Page {page + 1} ({totalCount} total)
         </span>
         <button
           onClick={() => setPage(page + 1)}
           disabled={!hasMore}
-          className="px-3 py-1 text-xs bg-slate-700 text-slate-300 rounded hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1 text-xs rounded font-medium transition-all duration-150"
+          style={{
+            backgroundColor: !hasMore ? "rgba(30, 41, 59, 0.5)" : "rgba(51, 65, 85, 0.5)",
+            color: !hasMore ? "#475569" : "#cbd5e1",
+            cursor: !hasMore ? "not-allowed" : "pointer",
+          }}
         >
           Next
         </button>

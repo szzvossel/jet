@@ -1,7 +1,8 @@
 /**
  * JET - Equity Derivatives Analytics
  *
- * Main application component. Tab-based layout with 4 industry-standard tabs.
+ * Main application component. Tab-based layout with 6 tabs,
+ * keyboard shortcuts, toast notifications, and theme support.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -14,6 +15,7 @@ import { StrategyTab } from "./components/strategy/StrategyTab";
 import { RiskTab } from "./components/risk/RiskTab";
 import { PnLTab } from "./components/pnl/PnLTab";
 import { TracerTab } from "./components/tracer/TracerTab";
+import { ToastProvider } from "./components/shared/Toast";
 import { setBackend } from "./hooks/usePricing";
 import type { BackendMode } from "./hooks/usePricing";
 import { HelmetIcon, TriumphIcon, DucatiIcon, YamahaIcon } from "./components/shared/MotorcycleIcons";
@@ -30,13 +32,50 @@ const BACKEND_KEY = "jet-backend-mode";
 const REMOTE_URL_KEY = "jet-remote-url";
 const THEME_KEY = "jet-theme";
 
+// Tab icons as inline SVGs
+const TabIconStrategy = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+  </svg>
+);
+const TabIconPricing = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+  </svg>
+);
+const TabIconDerived = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12c0 1.2-4 6-9 6s-9-4.8-9-6c0-1.2 4-6 9-6s9 4.8 9 6z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+const TabIconRisk = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+const TabIconPnl = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+  </svg>
+);
+const TabIconTracer = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="4 17 10 11 4 5" />
+    <line x1="12" y1="19" x2="20" y2="19" />
+  </svg>
+);
+
 const TABS = [
-  { id: "strategy", label: "Option Strategy" },
-  { id: "pricing", label: "Option Pricing" },
-  { id: "derived", label: "Derived Data Marking" },
-  { id: "risk", label: "Risk View" },
-  { id: "pnl", label: "P&L Explanation" },
-  { id: "tracer", label: "Tracer" },
+  { id: "strategy", label: "Option Strategy", icon: <TabIconStrategy /> },
+  { id: "pricing", label: "Option Pricing", icon: <TabIconPricing /> },
+  { id: "derived", label: "Derived Data", icon: <TabIconDerived /> },
+  { id: "risk", label: "Risk View", icon: <TabIconRisk /> },
+  { id: "pnl", label: "P&L Explanation", icon: <TabIconPnl /> },
+  { id: "tracer", label: "Tracer", icon: <TabIconTracer /> },
 ];
 
 function App() {
@@ -72,12 +111,23 @@ function App() {
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
-  // F12 to toggle devtools
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // F12 to toggle devtools
       if (e.key === "F12") {
         e.preventDefault();
         invoke("toggle_devtools").catch(() => {});
+        return;
+      }
+
+      // Cmd/Ctrl + 1-6 to switch tabs
+      if ((e.metaKey || e.ctrlKey) && e.key >= "1" && e.key <= "6") {
+        e.preventDefault();
+        const idx = parseInt(e.key) - 1;
+        if (TABS[idx]) {
+          setActiveTab(TABS[idx].id);
+        }
       }
     };
     window.addEventListener("keydown", handler);
@@ -108,66 +158,65 @@ function App() {
   };
 
   return (
-    <>
+    <ToastProvider>
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative">
         {/* Background motorcycle watermark */}
         <img
           src={motoBg}
           alt=""
-          className="fixed bottom-0 right-0 pointer-events-none z-0 opacity-[0.06]"
-          style={{ width: "600px", height: "auto" }}
+          className="fixed bottom-0 right-0 pointer-events-none z-0 opacity-[0.04]"
+          style={{ width: "500px", height: "auto" }}
         />
 
-        {/* Header */}
-        <header className="relative z-10 bg-slate-900 border-b border-slate-800 px-6 py-3">
+        {/* Header — compact command bar */}
+        <header className="relative z-10 px-5 py-2.5" style={{ background: 'var(--surface-header)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(71, 85, 105, 0.3)' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
+              <div className="w-7 h-7 rounded-md flex items-center justify-center font-bold text-white text-xs" style={{ background: 'linear-gradient(135deg, var(--brand-500) 0%, var(--brand-700) 100%)' }}>
                 J
               </div>
-              <div>
-                <h1 className="text-lg font-bold text-slate-100">JET</h1>
-                <p className="text-xs text-slate-500">
-                  Equity Derivatives Analytics
-                </p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm font-bold text-slate-100 tracking-tight" style={{ fontFamily: "'DM Sans', sans-serif" }}>JET</h1>
+                <span className="text-[10px] text-slate-500 hidden sm:inline">Equity Derivatives Analytics</span>
               </div>
               {THEME_ICONS[theme] && (() => {
                 const Icon = THEME_ICONS[theme];
-                return <span className="text-brand-400"><Icon /></span>;
+                return <span className="text-brand-400 ml-1"><Icon /></span>;
               })()}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <select
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
-                className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-brand-500"
+                className="bg-slate-800/60 border border-slate-700/50 rounded px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-brand-500 transition-colors"
               >
                 <option value="">Default</option>
                 <option value="765rs">765RS</option>
                 <option value="v4s">V4S</option>
                 <option value="r1m">R1M</option>
               </select>
-              <span className="text-slate-500 uppercase tracking-wider text-xs">
+              <div className="h-4 w-px bg-slate-700/50" />
+              <span className="text-slate-600 uppercase tracking-widest text-[10px] font-medium">
                 Backend
               </span>
-              <div className="flex rounded-lg border border-slate-600 overflow-hidden">
+              <div className="flex rounded-md border border-slate-700/50 overflow-hidden">
                 <button
                   onClick={() => setBackendMode("local")}
-                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1 text-[11px] font-medium transition-all duration-150 ${
                     backendMode === "local"
-                      ? "bg-brand-600 text-white"
-                      : "bg-slate-800 text-slate-400 hover:text-slate-200"
+                      ? "bg-brand-600 text-white shadow-sm"
+                      : "bg-slate-800/60 text-slate-500 hover:text-slate-300"
                   }`}
                 >
                   Local
                 </button>
                 <button
                   onClick={() => setBackendMode("remote")}
-                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1 text-[11px] font-medium transition-all duration-150 ${
                     backendMode === "remote"
-                      ? "bg-brand-600 text-white"
-                      : "bg-slate-800 text-slate-400 hover:text-slate-200"
+                      ? "bg-brand-600 text-white shadow-sm"
+                      : "bg-slate-800/60 text-slate-500 hover:text-slate-300"
                   }`}
                 >
                   Remote
@@ -179,11 +228,11 @@ function App() {
                   value={remoteUrl}
                   onChange={(e) => setRemoteUrl(e.target.value)}
                   placeholder="http://localhost:3000"
-                  className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-xs text-slate-200 w-56 focus:outline-none focus:border-brand-500"
+                  className="input-refined px-2 py-1 text-[11px] text-slate-200 w-48"
                 />
               )}
-              <span className="text-slate-500 text-xs">
-                {backendMode === "local" ? "Tauri IPC" : `HTTP → ${remoteUrl}`}
+              <span className="text-slate-600 text-[10px] font-mono">
+                {backendMode === "local" ? "IPC" : remoteUrl.replace(/^https?:\/\//, '')}
               </span>
             </div>
           </div>
@@ -196,19 +245,25 @@ function App() {
 
         {/* Tab Content */}
         <main className="flex-1 overflow-y-auto pb-10 relative z-10">
-          {renderTab()}
+          <div key={activeTab} className="tab-content-enter">
+            {renderTab()}
+          </div>
         </main>
 
         {/* Footer */}
-        <footer className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 px-6 py-2 z-10">
-          <div className="flex justify-between items-center text-xs text-slate-600">
-            <span>JET v0.1.0</span>
-            <span>Black-Scholes-Merton Pricing Engine</span>
-            <span>Ready</span>
+        <footer className="fixed bottom-0 left-0 right-0 px-5 py-1.5 z-10" style={{ background: 'var(--surface-header)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(71, 85, 105, 0.2)' }}>
+          <div className="flex justify-between items-center text-[10px] text-slate-600 font-mono">
+            <span>v0.1.0</span>
+            <span>Black-Scholes-Merton</span>
+            <span className="flex items-center gap-1.5">
+              <span className="hidden sm:inline">Cmd+1-6</span>
+              <span className="hidden sm:inline text-slate-700">|</span>
+              <span className="hidden sm:inline">Cmd+Enter</span>
+            </span>
           </div>
         </footer>
       </div>
-    </>
+    </ToastProvider>
   );
 }
 

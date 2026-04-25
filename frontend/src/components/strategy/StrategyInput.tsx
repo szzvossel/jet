@@ -7,15 +7,20 @@ import React, { useState } from "react";
 interface Props {
   onParse: (input: string) => void;
   loading: boolean;
+  inputRef?: React.Ref<HTMLInputElement>;
 }
 
 const EXAMPLES = [
-  "SPX may26 110% Call A",
-  "SPX may26 5500 Call E",
-  "SPX 2026-05-15 110% C A",
-  "SPX 15May26 110% Call A",
-  "SPY jun26 105P A",
-  "SPX may26 +1 110%C A / -1 100%P A",
+  { label: "Single Call", quote: "SPX may26 110% Call A" },
+  { label: "Single Put", quote: "SPX may26 90% Put A" },
+  { label: "Bull Call Spread", quote: "SPX may26 +1 100%C A / -1 110%C A" },
+  { label: "Bear Call Spread", quote: "SPX may26 -1 100%C A / +1 110%C A" },
+  { label: "Bull Put Spread", quote: "SPX may26 -1 90%P A / +1 80%P A" },
+  { label: "Bear Put Spread", quote: "SPX may26 +1 100%P A / -1 90%P A" },
+  { label: "Straddle", quote: "SPX may26 +1 100%C A / +1 100%P A" },
+  { label: "Strangle", quote: "SPX may26 +1 105%C A / +1 95%P A" },
+  { label: "Call Calendar", quote: "SPX may26 +1 100%C A / -1 100%C A" },
+  { label: "Iron Condor", quote: "SPX may26 -1 105%C A / +1 110%C A / -1 95%P A / +1 90%P A" },
 ];
 
 const SUPPORTED_STRATEGIES = [
@@ -42,7 +47,7 @@ function typeBadgeClass(type: string): string {
   }
 }
 
-export function StrategyInput({ onParse, loading }: Props) {
+export function StrategyInput({ onParse, loading, inputRef }: Props) {
   const [input, setInput] = useState("");
   const [showHint, setShowHint] = useState(false);
 
@@ -54,36 +59,36 @@ export function StrategyInput({ onParse, loading }: Props) {
   };
 
   return (
-    <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+    <div className="surface-card-static p-4">
       <div className="relative inline-block mb-3">
         <h2
-          className="text-sm font-semibold text-slate-300 cursor-default"
+          className="text-[13px] font-semibold text-slate-300 cursor-default tracking-tight"
           onMouseEnter={() => setShowHint(true)}
           onMouseLeave={() => setShowHint(false)}
         >
-          Option Strategy Input
-          <span className="ml-1 text-xs text-slate-500">?</span>
+          Strategy Input
+          <span className="ml-1.5 text-[10px] text-slate-600 bg-slate-800 px-1.5 py-0.5 rounded-full">?</span>
         </h2>
 
         {showHint && (
-          <div className="absolute top-full left-0 mt-2 z-50 w-[520px] bg-slate-900 border border-slate-600 rounded-lg shadow-2xl shadow-black/50">
-            <div className="px-4 py-2 border-b border-slate-700">
-              <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+          <div className="absolute top-full left-0 mt-2 z-50 w-[520px] surface-card-static shadow-2xl shadow-black/50 overflow-hidden">
+            <div className="px-4 py-2 border-b border-slate-700/50">
+              <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                 Supported Strategies
               </h3>
             </div>
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="px-4 py-1.5 text-left text-xs font-medium text-slate-500 uppercase">Strategy</th>
-                  <th className="px-3 py-1.5 text-center text-xs font-medium text-slate-500 uppercase">Legs</th>
-                  <th className="px-3 py-1.5 text-center text-xs font-medium text-slate-500 uppercase">Type</th>
-                  <th className="px-4 py-1.5 text-left text-xs font-medium text-slate-500 uppercase">Description</th>
+                <tr className="border-b border-slate-800/50">
+                  <th className="px-4 py-1.5 text-left text-[10px] font-medium text-slate-500 uppercase">Strategy</th>
+                  <th className="px-3 py-1.5 text-center text-[10px] font-medium text-slate-500 uppercase">Legs</th>
+                  <th className="px-3 py-1.5 text-center text-[10px] font-medium text-slate-500 uppercase">Type</th>
+                  <th className="px-4 py-1.5 text-left text-[10px] font-medium text-slate-500 uppercase">Description</th>
                 </tr>
               </thead>
               <tbody>
                 {SUPPORTED_STRATEGIES.map((s) => (
-                  <tr key={s.name} className="border-b border-slate-800 last:border-0">
+                  <tr key={s.name} className="border-b border-slate-800/30 last:border-0 hover:bg-slate-800/30 transition-colors">
                     <td className="px-4 py-1.5 text-xs font-medium text-brand-400">{s.name}</td>
                     <td className="px-3 py-1.5 text-xs text-slate-300 text-center">{s.legs}</td>
                     <td className="px-3 py-1.5 text-center">
@@ -103,33 +108,46 @@ export function StrategyInput({ onParse, loading }: Props) {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex gap-2">
           <input
+            ref={inputRef ?? undefined}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder='e.g. SPX may26 110% Call A'
-            className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 font-mono"
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && input.trim()) {
+                e.preventDefault();
+                onParse(input.trim());
+              }
+            }}
+            placeholder='e.g. SPX may26 110% Call A  —  Cmd+Enter to parse'
+            className="input-refined flex-1 px-3 py-2 text-sm text-slate-100"
             disabled={loading}
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-4 py-2 bg-brand-600 hover:bg-brand-500 disabled:bg-slate-700 disabled:text-slate-500 text-white text-sm font-medium rounded transition-colors"
+            className="btn-primary px-4 py-2 text-sm"
           >
-            {loading ? "Parsing..." : "Parse"}
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Parsing
+              </span>
+            ) : "Parse"}
           </button>
         </div>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {EXAMPLES.map((ex) => (
             <button
-              key={ex}
+              key={ex.label}
               type="button"
               onClick={() => {
-                setInput(ex);
-                onParse(ex);
+                setInput(ex.quote);
+                onParse(ex.quote);
               }}
-              className="text-xs px-2 py-1 bg-slate-900 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded border border-slate-700 transition-colors font-mono"
+              className="text-[11px] px-2 py-1 bg-slate-900/60 hover:bg-slate-700/60 text-slate-500 hover:text-slate-300 rounded border border-slate-700/40 transition-all duration-150 hover:border-slate-600/50"
+              title={ex.quote}
             >
-              {ex}
+              {ex.label}
             </button>
           ))}
         </div>

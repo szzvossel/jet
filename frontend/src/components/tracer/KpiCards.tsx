@@ -9,17 +9,24 @@ interface Props {
   kpis: TracerKpis;
 }
 
+const CARD_DEFS = [
+  { key: "events", label: "Total Events", color: "#6366f1" },
+  { key: "error_rate", label: "Error Rate", color: "#ef4444" },
+  { key: "latency", label: "Avg Latency", color: "#eab308" },
+  { key: "files", label: "Monitored Files", color: "#06b6d4" },
+] as const;
+
 export const KpiCards: React.FC<Props> = ({ kpis }) => {
   const cards = [
     {
       label: "Total Events",
       value: kpis.total_events.toLocaleString(),
-      color: "text-brand-400",
+      color: "#6366f1",
     },
     {
       label: "Error Rate",
       value: `${(kpis.error_rate * 100).toFixed(1)}%`,
-      color: kpis.error_rate > 0.05 ? "text-red-400" : "text-green-400",
+      color: kpis.error_rate > 0.05 ? "#ef4444" : "#22c55e",
     },
     {
       label: "Avg Latency",
@@ -27,23 +34,30 @@ export const KpiCards: React.FC<Props> = ({ kpis }) => {
         kpis.latency.avg_ms != null
           ? `${kpis.latency.avg_ms.toFixed(0)}ms`
           : "N/A",
-      color: "text-yellow-400",
+      color: "#eab308",
     },
     {
       label: "Monitored Files",
       value: kpis.monitored_files.length.toString(),
-      color: "text-cyan-400",
+      color: "#06b6d4",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-grid">
       {cards.map((card) => (
-        <div key={card.label} className="bg-slate-800 rounded-lg p-4">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-            {card.label}
-          </span>
-          <div className={`text-xl font-mono font-semibold ${card.color}`}>
+        <div key={card.label} className="surface-card-static p-3.5 animate-fade-up">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: card.color }}
+            />
+            <span className="data-label">{card.label}</span>
+          </div>
+          <div
+            className="text-lg font-semibold"
+            style={{ color: card.color, fontFamily: "var(--font-mono)" }}
+          >
             {card.value}
           </div>
         </div>
