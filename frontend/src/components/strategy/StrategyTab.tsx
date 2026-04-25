@@ -11,6 +11,7 @@ import { StrategyInput } from "./StrategyInput";
 import { StrategyGrid } from "./StrategyGrid";
 import { StrategyPayoffChart } from "./StrategyPayoffChart";
 import { StrategyGreeksChart } from "./StrategyGreeksChart";
+import { StrategyCheatsheet } from "./StrategyCheatsheet";
 import { priceStrategy } from "../../hooks/usePricing";
 import { NumberDisplay } from "../shared/NumberDisplay";
 import { useToast } from "../shared/Toast";
@@ -39,12 +40,28 @@ export function StrategyTab() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>(loadHistory);
+  const [showCheatsheet, setShowCheatsheet] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
   // Auto-focus the input on mount
   useEffect(() => {
     inputRef.current?.focus();
+  }, []);
+
+  // Cmd+` to toggle cheatsheet, Escape to close.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "`" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setShowCheatsheet((prev) => !prev);
+      }
+      if (e.key === "Escape") {
+        setShowCheatsheet(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   const handleParse = async (input: string) => {
@@ -80,6 +97,7 @@ export function StrategyTab() {
           onParse={handleParse}
           loading={loading}
           inputRef={inputRef}
+          onCheatsheet={() => setShowCheatsheet(true)}
         />
 
         {/* Loading skeleton */}
@@ -238,7 +256,23 @@ export function StrategyTab() {
             <StrategyGrid legs={result.legs} />
           </>
         )}
+
+        {/* Cheatsheet shortcut hint */}
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={() => setShowCheatsheet(true)}
+            className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors flex items-center gap-1"
+          >
+            <kbd className="px-1 py-0.5 rounded bg-slate-800/80 text-slate-600 border border-slate-700/50 font-mono text-[9px]">⌘`</kbd>
+            Cheatsheet
+          </button>
+        </div>
       </div>
+
+      {/* Cheatsheet modal */}
+      {showCheatsheet && (
+        <StrategyCheatsheet onClose={() => setShowCheatsheet(false)} />
+      )}
     </div>
   );
 }

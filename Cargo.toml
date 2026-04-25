@@ -2,6 +2,8 @@
 members = [
     "crates/core",
     "crates/tracer",
+    "crates/bus",
+    "crates/client",
     "src-tauri",
     "src-server",
 ]

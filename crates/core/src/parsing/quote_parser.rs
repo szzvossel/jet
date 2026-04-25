@@ -14,6 +14,7 @@ pub fn spot_for_symbol(sym: &str) -> Result<f64, String> {
         "IWM" => Ok(200.0),
         "DIA" => Ok(400.0),
         "EEM" => Ok(40.0),
+        "SX5E" => Ok(5000.0),
         other => Err(format!("Unknown symbol: {}", other)),
     }
 }

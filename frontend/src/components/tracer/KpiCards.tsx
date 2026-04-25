@@ -9,13 +9,6 @@ interface Props {
   kpis: TracerKpis;
 }
 
-const CARD_DEFS = [
-  { key: "events", label: "Total Events", color: "#6366f1" },
-  { key: "error_rate", label: "Error Rate", color: "#ef4444" },
-  { key: "latency", label: "Avg Latency", color: "#eab308" },
-  { key: "files", label: "Monitored Files", color: "#06b6d4" },
-] as const;
-
 export const KpiCards: React.FC<Props> = ({ kpis }) => {
   const cards = [
     {

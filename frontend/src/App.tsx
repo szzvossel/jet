@@ -10,6 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { SplashScreen } from "./components/SplashScreen";
 import { TabBar } from "./components/shared/TabBar";
 import { PricingTab } from "./components/pricing/PricingTab";
+import { LiveTab } from "./components/live/LiveTab";
 import { DerivedDataTab } from "./components/derived_data/DerivedDataTab";
 import { StrategyTab } from "./components/strategy/StrategyTab";
 import { RiskTab } from "./components/risk/RiskTab";
@@ -18,6 +19,7 @@ import { TracerTab } from "./components/tracer/TracerTab";
 import { ToastProvider } from "./components/shared/Toast";
 import { setBackend } from "./hooks/usePricing";
 import type { BackendMode } from "./hooks/usePricing";
+import { LiveSpotContext, useLiveSpotProvider } from "./contexts/LiveSpotContext";
 import { HelmetIcon, TriumphIcon, DucatiIcon, YamahaIcon } from "./components/shared/MotorcycleIcons";
 import motoBg from "./assets/moto.png";
 
@@ -33,6 +35,11 @@ const REMOTE_URL_KEY = "jet-remote-url";
 const THEME_KEY = "jet-theme";
 
 // Tab icons as inline SVGs
+const TabIconLive = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+  </svg>
+);
 const TabIconStrategy = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
@@ -70,6 +77,7 @@ const TabIconTracer = () => (
 );
 
 const TABS = [
+  { id: "live", label: "Live", icon: <TabIconLive /> },
   { id: "strategy", label: "Option Strategy", icon: <TabIconStrategy /> },
   { id: "pricing", label: "Option Pricing", icon: <TabIconPricing /> },
   { id: "derived", label: "Derived Data", icon: <TabIconDerived /> },
@@ -79,8 +87,9 @@ const TABS = [
 ];
 
 function App() {
-  const [activeTab, setActiveTab] = useState("strategy");
+  const [activeTab, setActiveTab] = useState("live");
   const [showSplash, setShowSplash] = useState(true);
+  const liveSpotMap = useLiveSpotProvider();
 
   const [backendMode, setBackendMode] = useState<BackendMode>(() => {
     return (localStorage.getItem(BACKEND_KEY) as BackendMode) || "local";
@@ -121,8 +130,8 @@ function App() {
         return;
       }
 
-      // Cmd/Ctrl + 1-6 to switch tabs
-      if ((e.metaKey || e.ctrlKey) && e.key >= "1" && e.key <= "6") {
+      // Cmd/Ctrl + 1-7 to switch tabs
+      if ((e.metaKey || e.ctrlKey) && e.key >= "1" && e.key <= "7") {
         e.preventDefault();
         const idx = parseInt(e.key) - 1;
         if (TABS[idx]) {
@@ -140,6 +149,8 @@ function App() {
 
   const renderTab = () => {
     switch (activeTab) {
+      case "live":
+        return <LiveTab />;
       case "pricing":
         return <PricingTab />;
       case "strategy":
@@ -153,11 +164,12 @@ function App() {
       case "tracer":
         return <TracerTab />;
       default:
-        return <StrategyTab />;
+        return <LiveTab />;
     }
   };
 
   return (
+    <LiveSpotContext.Provider value={liveSpotMap}>
     <ToastProvider>
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative">
@@ -256,7 +268,7 @@ function App() {
             <span>v0.1.0</span>
             <span>Black-Scholes-Merton</span>
             <span className="flex items-center gap-1.5">
-              <span className="hidden sm:inline">Cmd+1-6</span>
+              <span className="hidden sm:inline">Cmd+1-7</span>
               <span className="hidden sm:inline text-slate-700">|</span>
               <span className="hidden sm:inline">Cmd+Enter</span>
             </span>
@@ -264,6 +276,7 @@ function App() {
         </footer>
       </div>
     </ToastProvider>
+    </LiveSpotContext.Provider>
   );
 }
 

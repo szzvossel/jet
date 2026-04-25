@@ -11,6 +11,7 @@ import { ResultPanel } from "./ResultPanel";
 import { PayoffChart } from "./PayoffChart";
 import { GreeksChart } from "./GreeksChart";
 import { priceOption, priceCurve, greeksCurve } from "../../hooks/usePricing";
+import { useLiveSpotMap } from "../../contexts/LiveSpotContext";
 import type {
   OptionType,
   OptionContract,
@@ -32,6 +33,10 @@ export function PricingTab() {
     volatility: 0.20,
     dividend_yield: 0.0,
   });
+
+  const [useLiveSpot, setUseLiveSpot] = useState(false);
+  const [liveSymbol, setLiveSymbol] = useState("SPX");
+  const liveSpotMap = useLiveSpotMap();
 
   const [result, setResult] = useState<PricingResult | null>(null);
   const [curveData, setCurveData] = useState<
@@ -71,6 +76,15 @@ export function PricingTab() {
     handlePrice();
   }, [handlePrice]);
 
+  // Sync live spot from bus into market state.
+  useEffect(() => {
+    if (!useLiveSpot) return;
+    const spot = liveSpotMap.get(liveSymbol);
+    if (spot !== undefined && spot !== market.spot) {
+      setMarket((prev) => ({ ...prev, spot }));
+    }
+  }, [useLiveSpot, liveSymbol, liveSpotMap, market.spot]);
+
   return (
     <div className="p-5">
       <div className="max-w-7xl mx-auto">
@@ -79,6 +93,45 @@ export function PricingTab() {
             {error}
           </div>
         )}
+
+        {/* Live spot toggle */}
+        <div className="mb-4 flex items-center gap-3 surface-card-static px-3.5 py-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useLiveSpot}
+              onChange={(e) => setUseLiveSpot(e.target.checked)}
+              className="rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500/50 focus:ring-offset-0 w-3.5 h-3.5"
+            />
+            <span className="text-[11px] text-slate-400">Use live prices</span>
+          </label>
+          {useLiveSpot && (
+            <>
+              <select
+                value={liveSymbol}
+                onChange={(e) => setLiveSymbol(e.target.value)}
+                className="bg-slate-800/60 border border-slate-700/50 rounded px-1.5 py-0.5 text-[11px] text-slate-300 focus:outline-none focus:border-brand-500 transition-colors"
+              >
+                {liveSpotMap.symbols().length > 0
+                  ? liveSpotMap.symbols().map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))
+                  : ["SPX", "SPY", "QQQ", "IWM", "DIA", "EEM"].map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+              </select>
+              {liveSpotMap.get(liveSymbol) !== undefined && (
+                <span className="text-[10px] text-emerald-400 font-mono">
+                  {liveSymbol} = {liveSpotMap.get(liveSymbol)!.toFixed(2)}
+                </span>
+              )}
+            </>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left: Input Panel */}

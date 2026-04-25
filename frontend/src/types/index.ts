@@ -305,3 +305,128 @@ export interface LogEventList {
   total_count: number;
   has_more: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Bus types — WebSocket Pub/Sub (jet-bus)
+// ---------------------------------------------------------------------------
+
+export type EventKind =
+  | "price_update"
+  | "greeks_update"
+  | "vol_surface_shift"
+  | "risk_alert"
+  | "pnl_snapshot"
+  | "market_snapshot";
+
+export type Channel =
+  | { type: "symbol"; value: string }
+  | { type: "event_type"; value: EventKind }
+  | { type: "strategy"; value: string }
+  | { type: "all" };
+
+export interface EventId {
+  "0": number;
+}
+
+export type PriceTickType = "last" | "bid" | "ask";
+
+export interface PriceUpdatePayload {
+  type: "price_update";
+  data: {
+    symbol: string;
+    tick_type: PriceTickType;
+    price: number;
+    size: number;
+  };
+}
+
+export interface GreeksUpdatePayload {
+  type: "greeks_update";
+  data: {
+    symbol: string;
+    delta: number;
+    gamma: number;
+    vega: number;
+    theta: number;
+    rho: number;
+  };
+}
+
+export interface VolSurfaceShiftPayload {
+  type: "vol_surface_shift";
+  data: {
+    symbol: string;
+    atm_vol: number;
+    skew: number;
+  };
+}
+
+export interface RiskAlertPayload {
+  type: "risk_alert";
+  data: {
+    message: string;
+    severity: string;
+  };
+}
+
+export interface PnlSnapshotPayload {
+  type: "pnl_snapshot";
+  data: {
+    total_pnl: number;
+    delta_pnl: number;
+    gamma_pnl: number;
+    vega_pnl: number;
+    theta_pnl: number;
+  };
+}
+
+export interface MarketSnapshotPayload {
+  type: "market_snapshot";
+  data: {
+    symbol: string;
+    spot: number;
+    bid: number;
+    ask: number;
+    volume: number;
+    implied_vol: number;
+  };
+}
+
+export type EventPayload =
+  | PriceUpdatePayload
+  | GreeksUpdatePayload
+  | VolSurfaceShiftPayload
+  | RiskAlertPayload
+  | PnlSnapshotPayload
+  | MarketSnapshotPayload;
+
+export interface MarketEvent {
+  id: number;
+  timestamp: string;
+  kind: EventKind;
+  channel: Channel;
+  payload: EventPayload;
+}
+
+export type ClientMessage =
+  | { action: "subscribe"; channels: Channel[] }
+  | { action: "unsubscribe"; channels: Channel[] }
+  | { action: "list_subscriptions" }
+  | { action: "ping"; client_time: number };
+
+export type ServerMessage =
+  | { type: "event"; event: MarketEvent }
+  | { type: "subscribed"; channels: Channel[] }
+  | { type: "unsubscribed"; channels: Channel[] }
+  | { type: "subscriptions"; channels: Channel[] }
+  | { type: "pong"; client_time: number; server_time: number }
+  | { type: "error"; code: string; message: string }
+  | { type: "lagged"; missed: number };
+
+export interface BusMetrics {
+  events_published: number;
+  active_sessions: number;
+  total_connections: number;
+  total_subscriptions: number;
+  lag_errors: number;
+}

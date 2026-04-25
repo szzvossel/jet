@@ -24,6 +24,8 @@ cargo test
 # Run tests for a specific crate
 cargo test -p jet-core
 cargo test -p jet-server
+cargo test -p jet-bus
+cargo test -p jet-client
 
 # Run a single Rust test
 cargo test -p jet-core test_hull_example_call
@@ -57,15 +59,27 @@ cd frontend && npm run dev
 
 # Both server + frontend (dev mode)
 cargo run -p jet-server & cd frontend && npm run dev
+
+# Run the pub/sub WebSocket bus (standalone, port 3001)
+cargo run -p jet-bus
+
+# All services together (server + bus + frontend)
+cargo run -p jet-server & cargo run -p jet-bus & cd frontend && npm run dev
+
+# Run the Rust CLI client (connects to jet-bus, live pricing)
+cargo run -p jet-bus &
+cargo run -p jet-client -- --symbols SPX,QQQ --rate 0.05 --vol 0.20
 ```
 
 ## Architecture
 
-**Cargo Workspace** with 3 crates:
+**Cargo Workspace** with 5 crates:
 
 ```
 jet/
 ├── crates/core/       ← jet-core: shared business logic (pricing, analytics, parsing)
+├── crates/bus/        ← jet-bus: standalone WebSocket pub/sub service (port 3001)
+├── crates/client/     ← jet-client: Rust CLI that subscribes to jet-bus, live pricing
 ├── src-tauri/         ← Tauri desktop app (thin IPC shell over jet-core)
 ├── src-server/        ← Axum HTTP API server (thin REST shell over jet-core)
 └── frontend/          ← React/TypeScript SPA (unchanged)
@@ -125,7 +139,49 @@ Axum server exposing the same 12 operations as REST endpoints:
 - `types/index.ts` — TypeScript interfaces mirroring Rust types
 - `components/strategy/StrategyTab.tsx` — Backend selector UI (Local/Remote toggle)
 
-Frontend dev server runs on **port 1420**. The Vite config proxies `/api` requests to `http://localhost:3000` (the Axum server). Tailwind uses a custom `brand` color palette based on indigo.
+Frontend dev server runs on **port 1420**. The Vite config proxies `/api` requests to `http://localhost:3000` (the Axum server) and `/ws` requests to `ws://localhost:3001` (the jet-bus WebSocket server). Tailwind uses a custom `brand` color palette based on indigo.
+
+### WebSocket Pub/Sub Service (`crates/bus/`)
+
+Standalone binary (`jet-bus`) that distributes simulated equity market events over WebSocket. Independent from `src-server` — shares only `jet-core` types.
+
+- `main.rs` — Standalone binary entry point (own Tokio runtime, port 3001)
+- `lib.rs` — Library exports (Broker, types, generator)
+- `types.rs` — Event model (`MarketEvent`, `EventKind`, `Channel`), wire protocol (`ClientMessage`, `ServerMessage`)
+- `broker.rs` — Central broker: `broadcast::Sender`, per-session subscription registry, publish/subscribe API
+- `topic.rs` — Topic matching: does an event match a subscription channel?
+- `session.rs` — Per-WebSocket-connection lifecycle (send loop + receive loop)
+- `generator.rs` — Simulated market event producer (random-walk price ticks, Greeks, risk alerts)
+- `metrics.rs` — Atomic counters for observability (`events_published`, `active_sessions`, `lag_errors`)
+- `error.rs` — `BusError` via `thiserror`
+
+**WebSocket endpoints:**
+
+| Path | Description |
+|------|-------------|
+| `ws://localhost:3001/ws` | WebSocket pub/sub — subscribe/unsubscribe channels, receive live events |
+| `GET /api/bus/metrics` | JSON snapshot of bus metrics |
+
+**Wire protocol (JSON over WebSocket):**
+
+Client → Server: `{ "action": "subscribe", "channels": [{"type":"symbol","value":"SPX"}] }`
+
+Server → Client: `{ "type": "event", "event": { "id": 42, "kind": "price_update", ... } }`
+
+**Frontend hook:** `hooks/useMarketEvents.ts` — auto-reconnecting WebSocket hook with ring buffer (500 events).
+
+### Rust CLI Client (`crates/client/`)
+
+Standalone binary that connects to `jet-bus` over WebSocket, subscribes to symbol channels, and runs live pricing via `jet-core`.
+
+- `main.rs` — CLI entry point with `clap` args (`--symbols`, `--bus-url`, `--rate`, `--vol`, `--risk-alerts`)
+- `connector.rs` — WebSocket client with auto-reconnect, sends `ClientMessage::Subscribe` on connect
+- `router.rs` — Receives `ServerMessage`, dispatches events by `EventKind` to handlers
+- `pricing.rs` — `PricingPipeline`: maintains an options book per symbol (ATM + 5% OTM calls/puts), re-prices on every spot tick via `jet-core::black_scholes::price()`
+- `output.rs` — Console output using `comfy-table` for pricing tables, formatted Greeks/snapshot/alert lines
+- `error.rs` — `ClientError` via `thiserror`
+
+**Usage:** `cargo run -p jet-client -- --symbols SPX,QQQ`
 
 ## Strategy Quote Parser
 
@@ -177,6 +233,7 @@ The 12 commands mirror the REST API 1:1. All accept JSON-serialized Rust structs
 ### Rust (workspace)
 - `tauri` v2, `tauri-plugin-shell` v2, `tauri-build` v2 — Desktop framework
 - `axum` v0.8, `tokio` (full), `tower-http` (cors) — HTTP server
+- `axum` v0.8 (ws feature), `tokio` (full), `tower-http` (cors), `futures-util`, `uuid` — WebSocket bus
 - `statrs` — Normal distribution functions
 - `serde` + `serde_json` — JSON serialization
 - `chrono` — Date/time for expiry parsing
