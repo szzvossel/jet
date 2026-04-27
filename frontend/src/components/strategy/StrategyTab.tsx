@@ -4,9 +4,10 @@
  * Accepts trader-style option quote strings, parses and prices them
  * server-side, and displays structured contract terms with BSM pricing
  * and Greeks in a grid.
+ * State persists across tab switches via useStrategyStore.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { StrategyInput } from "./StrategyInput";
 import { StrategyGrid } from "./StrategyGrid";
 import { StrategyPayoffChart } from "./StrategyPayoffChart";
@@ -16,31 +17,22 @@ import { priceStrategy } from "../../hooks/usePricing";
 import { NumberDisplay } from "../shared/NumberDisplay";
 import { useToast } from "../shared/Toast";
 import { SkeletonCard, SkeletonTable } from "../shared/Skeleton";
-import type { PricedStrategyResult } from "../../types";
-
-const HISTORY_KEY = "jet-strategy-history";
-const MAX_HISTORY = 10;
-
-function loadHistory(): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(input: string) {
-  const hist = loadHistory().filter((h) => h !== input);
-  hist.unshift(input);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(hist.slice(0, MAX_HISTORY)));
-}
+import { useStrategyStore } from "../../stores/useStrategyStore";
 
 export function StrategyTab() {
-  const [result, setResult] = useState<PricedStrategyResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<string[]>(loadHistory);
-  const [showCheatsheet, setShowCheatsheet] = useState(false);
+  const result = useStrategyStore((s) => s.result);
+  const error = useStrategyStore((s) => s.error);
+  const loading = useStrategyStore((s) => s.loading);
+  const history = useStrategyStore((s) => s.history);
+  const showCheatsheet = useStrategyStore((s) => s.showCheatsheet);
+
+  const setResult = useStrategyStore((s) => s.setResult);
+  const setError = useStrategyStore((s) => s.setError);
+  const setLoading = useStrategyStore((s) => s.setLoading);
+  const addHistory = useStrategyStore((s) => s.addHistory);
+  const setShowCheatsheet = useStrategyStore((s) => s.setShowCheatsheet);
+  const toggleCheatsheet = useStrategyStore((s) => s.toggleCheatsheet);
+
   const inputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
 
@@ -54,7 +46,7 @@ export function StrategyTab() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "`" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setShowCheatsheet((prev) => !prev);
+        toggleCheatsheet();
       }
       if (e.key === "Escape") {
         setShowCheatsheet(false);
@@ -62,7 +54,7 @@ export function StrategyTab() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [toggleCheatsheet, setShowCheatsheet]);
 
   const handleParse = async (input: string) => {
     setLoading(true);
@@ -70,8 +62,7 @@ export function StrategyTab() {
     try {
       const priced = await priceStrategy(input);
       setResult(priced);
-      saveHistory(input);
-      setHistory(loadHistory());
+      addHistory(input);
       addToast(`Parsed ${priced.strategy_name} (${priced.legs.length} leg${priced.legs.length > 1 ? "s" : ""})`, "success");
     } catch (e) {
       const msg = String(e);

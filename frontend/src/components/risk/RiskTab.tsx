@@ -2,14 +2,15 @@
  * RiskTab — Live Greeks exposure dashboard.
  *
  * Shows aggregate risk summary cards, position Greeks table, and delta exposure chart.
+ * State persists across tab switches via useRiskStore.
  */
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { GreeksGrid } from "./GreeksGrid";
 import { DeltaExposureChart } from "./DeltaExposureChart";
 import { NumberDisplay } from "../shared/NumberDisplay";
 import { fetchRiskSummary } from "../../hooks/usePricing";
-import type { RiskSummary } from "../../types";
+import { useRiskStore } from "../../stores/useRiskStore";
 
 const SUMMARY_CARDS = [
   { key: "total_delta", label: "Delta", color: "#3b82f6" },
@@ -21,11 +22,14 @@ const SUMMARY_CARDS = [
 ] as const;
 
 export function RiskTab() {
-  const [riskData, setRiskData] = useState<RiskSummary | null>(null);
+  const riskData = useRiskStore((s) => s.riskData);
+  const setRiskData = useRiskStore((s) => s.setRiskData);
 
   useEffect(() => {
-    fetchRiskSummary().then(setRiskData).catch(console.error);
-  }, []);
+    if (!riskData) {
+      fetchRiskSummary().then(setRiskData).catch(console.error);
+    }
+  }, [riskData, setRiskData]);
 
   if (!riskData) {
     return (

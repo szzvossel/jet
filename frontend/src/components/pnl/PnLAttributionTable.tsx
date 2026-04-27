@@ -22,6 +22,23 @@ export const PnLAttributionTable: React.FC<Props> = ({ positions }) => {
       ),
     },
     {
+      key: "portfolio",
+      header: "Portfolio",
+      align: "center",
+      render: (val: string) => {
+        const colors: Record<string, string> = {
+          Alpha: "text-blue-400",
+          Hedge: "text-amber-400",
+          Yield: "text-emerald-400",
+        };
+        return (
+          <span className={`text-xs font-medium px-1.5 py-0.5 rounded bg-slate-800/60 ${colors[val] ?? "text-slate-400"}`}>
+            {val}
+          </span>
+        );
+      },
+    },
+    {
       key: "underlying",
       header: "Underlying",
       align: "center",

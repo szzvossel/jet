@@ -131,6 +131,7 @@ export interface CorrelationMatrix {
 
 export interface PositionRisk {
   position: string;
+  portfolio: string;
   underlying: string;
   quantity: number;
   delta: number;
@@ -158,6 +159,7 @@ export interface RiskSummary {
 
 export interface PnlAttribution {
   position: string;
+  portfolio: string;
   underlying: string;
   total_pnl: number;
   delta_pnl: number;

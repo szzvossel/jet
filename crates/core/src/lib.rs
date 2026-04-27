@@ -47,6 +47,7 @@ pub struct GreeksCurveRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PositionRisk {
     pub position: String,
+    pub portfolio: String,
     pub underlying: String,
     pub quantity: f64,
     pub delta: f64,
@@ -91,6 +92,7 @@ pub fn sample_risk_summary() -> RiskSummary {
     let positions = vec![
         PositionRisk {
             position: "SPY 100C Mar27".to_string(),
+            portfolio: "Alpha".to_string(),
             underlying: "SPY".to_string(),
             quantity: 50.0,
             delta: 32.5,
@@ -103,6 +105,7 @@ pub fn sample_risk_summary() -> RiskSummary {
         },
         PositionRisk {
             position: "SPY 95P Mar27".to_string(),
+            portfolio: "Hedge".to_string(),
             underlying: "SPY".to_string(),
             quantity: -30.0,
             delta: -12.8,
@@ -115,6 +118,7 @@ pub fn sample_risk_summary() -> RiskSummary {
         },
         PositionRisk {
             position: "QQQ 150C Mar27".to_string(),
+            portfolio: "Alpha".to_string(),
             underlying: "QQQ".to_string(),
             quantity: 40.0,
             delta: 28.4,
@@ -127,6 +131,7 @@ pub fn sample_risk_summary() -> RiskSummary {
         },
         PositionRisk {
             position: "IWM 50P Mar27".to_string(),
+            portfolio: "Hedge".to_string(),
             underlying: "IWM".to_string(),
             quantity: -20.0,
             delta: -8.6,
@@ -139,6 +144,7 @@ pub fn sample_risk_summary() -> RiskSummary {
         },
         PositionRisk {
             position: "DIA 180C Mar27".to_string(),
+            portfolio: "Yield".to_string(),
             underlying: "DIA".to_string(),
             quantity: 25.0,
             delta: 18.2,
@@ -151,6 +157,7 @@ pub fn sample_risk_summary() -> RiskSummary {
         },
         PositionRisk {
             position: "EEM 35P Mar27".to_string(),
+            portfolio: "Yield".to_string(),
             underlying: "EEM".to_string(),
             quantity: -15.0,
             delta: -6.4,

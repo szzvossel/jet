@@ -3,49 +3,46 @@
  *
  * Subscribes to jet-bus WebSocket, displays live quote cards for
  * watched symbols, and shows a scrollable event feed.
+ * WebSocket connection is owned by App.tsx and passed in as a prop
+ * so the subscription survives tab switches.
+ * Watchlist persists via useLiveStore.
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { useMarketEvents } from "../../hooks/useMarketEvents";
-import { useLiveSpotMap } from "../../contexts/LiveSpotContext";
+import { useCallback, useMemo, useEffect } from "react";
 import { QuoteBoard } from "./QuoteBoard";
 import { EventLog } from "./EventLog";
 import { SubscriptionControls } from "./SubscriptionControls";
 import { Cheatsheet } from "./Cheatsheet";
-import type { Channel } from "../../types";
+import { useLiveStore } from "../../stores/useLiveStore";
+import type { MarketEvent } from "../../types";
 
-const WATCHLIST_KEY = "jet-watchlist";
-const DEFAULT_WATCHLIST = ["SPX", "SPY", "QQQ", "SX5E"];
-
-function loadWatchlist(): string[] {
-  try {
-    const stored = localStorage.getItem(WATCHLIST_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return DEFAULT_WATCHLIST;
+interface MarketEventsSource {
+  events: MarketEvent[];
+  connectionState: number;
+  connect: () => void;
+  disconnect: () => void;
 }
 
-function buildChannels(_watchlist: string[]): Channel[] {
-  return [
-    { type: "event_type" as const, value: "price_update" as const },
-  ];
+interface LiveTabProps {
+  marketEvents: MarketEventsSource;
 }
 
-export function LiveTab() {
-  const [watchlist, setWatchlist] = useState<string[]>(loadWatchlist);
-  const [showCheatsheet, setShowCheatsheet] = useState(false);
+export function LiveTab({ marketEvents }: LiveTabProps) {
+  const watchlist = useLiveStore((s) => s.watchlist);
+  const showCheatsheet = useLiveStore((s) => s.showCheatsheet);
+  const addSymbol = useLiveStore((s) => s.addSymbol);
+  const removeSymbol = useLiveStore((s) => s.removeSymbol);
+  const setShowCheatsheet = useLiveStore((s) => s.setShowCheatsheet);
+  const toggleCheatsheet = useLiveStore((s) => s.toggleCheatsheet);
+
+  const { events, connectionState, connect, disconnect } = marketEvents;
 
   // Cmd+` to toggle cheatsheet, Escape to close.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "`" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setShowCheatsheet((prev) => !prev);
+        toggleCheatsheet();
       }
       if (e.key === "Escape") {
         setShowCheatsheet(false);
@@ -53,20 +50,7 @@ export function LiveTab() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
-
-  // Persist watchlist changes.
-  useEffect(() => {
-    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
-  }, [watchlist]);
-
-  const channels = useMemo(() => buildChannels(watchlist), [watchlist]);
-
-  const { events, connectionState, connect, disconnect } =
-    useMarketEvents({
-      initialChannels: channels,
-      autoReconnect: true,
-    });
+  }, [toggleCheatsheet, setShowCheatsheet]);
 
   const isConnected = connectionState === WebSocket.OPEN || connectionState === WebSocket.CONNECTING;
 
@@ -80,32 +64,18 @@ export function LiveTab() {
     [events, watchlist]
   );
 
-  // Write live spot prices to shared context for PricingTab.
-  const liveSpotMap = useLiveSpotMap();
-  useEffect(() => {
-    for (const event of filteredEvents) {
-      const data = (event.payload as { type: string; data: { symbol: string; tick_type: string; price: number } }).data;
-      if (data.tick_type === "last") {
-        liveSpotMap.set(data.symbol, data.price);
-      }
-    }
-  }, [filteredEvents, liveSpotMap]);
-
   const handleAddSymbol = useCallback(
     (sym: string) => {
-      setWatchlist((prev) => {
-        if (prev.includes(sym)) return prev;
-        return [...prev, sym];
-      });
+      addSymbol(sym);
     },
-    []
+    [addSymbol]
   );
 
   const handleRemoveSymbol = useCallback(
     (sym: string) => {
-      setWatchlist((prev) => prev.filter((s) => s !== sym));
+      removeSymbol(sym);
     },
-    []
+    [removeSymbol]
   );
 
   const connectionLabel =

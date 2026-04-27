@@ -5,7 +5,7 @@
  * keyboard shortcuts, toast notifications, and theme support.
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { SplashScreen } from "./components/SplashScreen";
 import { TabBar } from "./components/shared/TabBar";
@@ -19,9 +19,11 @@ import { TracerTab } from "./components/tracer/TracerTab";
 import { ToastProvider } from "./components/shared/Toast";
 import { setBackend } from "./hooks/usePricing";
 import type { BackendMode } from "./hooks/usePricing";
+import { useMarketEvents } from "./hooks/useMarketEvents";
 import { LiveSpotContext, useLiveSpotProvider } from "./contexts/LiveSpotContext";
 import { HelmetIcon, TriumphIcon, DucatiIcon, YamahaIcon } from "./components/shared/MotorcycleIcons";
 import motoBg from "./assets/moto.png";
+import type { Channel } from "./types";
 
 const THEME_ICONS: Record<string, React.FC> = {
   "": HelmetIcon,
@@ -77,9 +79,9 @@ const TabIconTracer = () => (
 );
 
 const TABS = [
-  { id: "live", label: "Live", icon: <TabIconLive /> },
   { id: "strategy", label: "Option Strategy", icon: <TabIconStrategy /> },
   { id: "pricing", label: "Option Pricing", icon: <TabIconPricing /> },
+  { id: "live", label: "Live", icon: <TabIconLive /> },
   { id: "derived", label: "Derived Data", icon: <TabIconDerived /> },
   { id: "risk", label: "Risk View", icon: <TabIconRisk /> },
   { id: "pnl", label: "P&L Explanation", icon: <TabIconPnl /> },
@@ -87,9 +89,30 @@ const TABS = [
 ];
 
 function App() {
-  const [activeTab, setActiveTab] = useState("live");
+  const [activeTab, setActiveTab] = useState("strategy");
   const [showSplash, setShowSplash] = useState(true);
   const liveSpotMap = useLiveSpotProvider();
+
+  // WebSocket connection lives at App level so it survives tab switches.
+  const wsChannels = useMemo<Channel[]>(
+    () => [{ type: "event_type" as const, value: "price_update" as const }],
+    []
+  );
+  const marketEvents = useMarketEvents({
+    initialChannels: wsChannels,
+    autoReconnect: true,
+  });
+
+  // Sync live spot prices regardless of active tab.
+  useEffect(() => {
+    for (const event of marketEvents.events) {
+      if (event.kind !== "price_update") continue;
+      const data = (event.payload as { type: string; data: { symbol: string; tick_type: string; price: number } }).data;
+      if (data.tick_type === "last") {
+        liveSpotMap.set(data.symbol, data.price);
+      }
+    }
+  }, [marketEvents.events, liveSpotMap]);
 
   const [backendMode, setBackendMode] = useState<BackendMode>(() => {
     return (localStorage.getItem(BACKEND_KEY) as BackendMode) || "local";
@@ -150,7 +173,7 @@ function App() {
   const renderTab = () => {
     switch (activeTab) {
       case "live":
-        return <LiveTab />;
+        return <LiveTab marketEvents={marketEvents} />;
       case "pricing":
         return <PricingTab />;
       case "strategy":
@@ -164,7 +187,7 @@ function App() {
       case "tracer":
         return <TracerTab />;
       default:
-        return <LiveTab />;
+        return <LiveTab marketEvents={marketEvents} />;
     }
   };
 

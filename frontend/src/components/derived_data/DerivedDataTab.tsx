@@ -3,9 +3,10 @@
  *
  * Sidebar navigation with brand-colored active indicator.
  * All sections use surface-card-static, data-label, and tighter spacing.
+ * State persists across tab switches via useDerivedStore.
  */
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { VolSmileChart } from "./VolSmileChart";
 import { YieldCurveChart } from "./YieldCurveChart";
 import { CorrelationMatrixGrid } from "./CorrelationMatrix";
@@ -18,18 +19,10 @@ import {
   fetchCorrelationMatrix,
   fetchCorrelationEntries,
 } from "../../hooks/usePricing";
-import type {
-  VolSurface,
-  VolSmileParams,
-  CurveData,
-  DividendCurve,
-  CorrelationMatrix,
-  CorrelationEntry,
-} from "../../types";
+import { useDerivedStore } from "../../stores/useDerivedStore";
+import type { VolSmileParams, CorrelationEntry } from "../../types";
 
-type DerivedSection = "volatility" | "dividend" | "repo" | "correlation";
-
-const SECTIONS: { id: DerivedSection; label: string; icon: string }[] = [
+const SECTIONS: { id: "volatility" | "dividend" | "repo" | "correlation"; label: string; icon: string }[] = [
   { id: "volatility", label: "Volatility", icon: "σ" },
   { id: "dividend", label: "Dividend", icon: "Δ" },
   { id: "repo", label: "Repo Curve", icon: "⌒" },
@@ -66,23 +59,28 @@ function volCellColor(vol: number, minVol: number, maxVol: number): string {
 }
 
 export function DerivedDataTab() {
-  const [activeSection, setActiveSection] = useState<DerivedSection>("volatility");
-  const [volSurface, setVolSurface] = useState<VolSurface | null>(null);
-  const [curves, setCurves] = useState<CurveData[]>([]);
-  const [dividends, setDividends] = useState<DividendCurve | null>(null);
-  const [correlationMatrix, setCorrelationMatrix] =
-    useState<CorrelationMatrix | null>(null);
-  const [correlationEntries, setCorrelationEntries] = useState<
-    CorrelationEntry[]
-  >([]);
+  const activeSection = useDerivedStore((s) => s.activeSection);
+  const volSurface = useDerivedStore((s) => s.volSurface);
+  const curves = useDerivedStore((s) => s.curves);
+  const dividends = useDerivedStore((s) => s.dividends);
+  const correlationMatrix = useDerivedStore((s) => s.correlationMatrix);
+  const correlationEntries = useDerivedStore((s) => s.correlationEntries);
+
+  const setActiveSection = useDerivedStore((s) => s.setActiveSection);
+  const setVolSurface = useDerivedStore((s) => s.setVolSurface);
+  const setCurves = useDerivedStore((s) => s.setCurves);
+  const setDividends = useDerivedStore((s) => s.setDividends);
+  const setCorrelationMatrix = useDerivedStore((s) => s.setCorrelationMatrix);
+  const setCorrelationEntries = useDerivedStore((s) => s.setCorrelationEntries);
 
   useEffect(() => {
-    fetchVolSurface().then(setVolSurface).catch(console.error);
-    fetchCurves().then(setCurves).catch(console.error);
-    fetchDividendCurve().then(setDividends).catch(console.error);
-    fetchCorrelationMatrix().then(setCorrelationMatrix).catch(console.error);
-    fetchCorrelationEntries().then(setCorrelationEntries).catch(console.error);
-  }, []);
+    // Only fetch if data hasn't been loaded yet
+    if (!volSurface) fetchVolSurface().then(setVolSurface).catch(console.error);
+    if (curves.length === 0) fetchCurves().then(setCurves).catch(console.error);
+    if (!dividends) fetchDividendCurve().then(setDividends).catch(console.error);
+    if (!correlationMatrix) fetchCorrelationMatrix().then(setCorrelationMatrix).catch(console.error);
+    if (correlationEntries.length === 0) fetchCorrelationEntries().then(setCorrelationEntries).catch(console.error);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleParamChange = (
     smileIndex: number,

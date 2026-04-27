@@ -2,23 +2,28 @@
  * PnLTab — P&L attribution breakdown by Greek risk factors.
  *
  * Summary cards, attribution table, and waterfall decomposition chart.
+ * State persists across tab switches via usePnlStore.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PnLAttributionTable } from "./PnLAttributionTable";
 import { NumberDisplay } from "../shared/NumberDisplay";
 import { fetchPnlAttribution } from "../../hooks/usePricing";
+import { usePnlStore } from "../../stores/usePnlStore";
 import type { PnlExplain } from "../../types";
 
 const WATERFALL_HEIGHT = 320;
 const WATERFALL_PADDING = { top: 24, right: 24, bottom: 44, left: 72 };
 
 export function PnLTab() {
-  const [pnlData, setPnlData] = useState<PnlExplain | null>(null);
+  const pnlData = usePnlStore((s) => s.pnlData);
+  const setPnlData = usePnlStore((s) => s.setPnlData);
 
   useEffect(() => {
-    fetchPnlAttribution().then(setPnlData).catch(console.error);
-  }, []);
+    if (!pnlData) {
+      fetchPnlAttribution().then(setPnlData).catch(console.error);
+    }
+  }, [pnlData, setPnlData]);
 
   if (!pnlData) {
     return (

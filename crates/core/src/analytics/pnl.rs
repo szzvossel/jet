@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PnlAttribution {
     pub position: String,
+    pub portfolio: String,
     pub underlying: String,
     pub total_pnl: f64,
     pub delta_pnl: f64,
@@ -34,6 +35,7 @@ pub fn sample_pnl_attribution() -> PnlExplain {
     let positions = vec![
         PnlAttribution {
             position: "SPY 100C Mar27".to_string(),
+            portfolio: "Alpha".to_string(),
             underlying: "SPY".to_string(),
             total_pnl: 1250.00,
             delta_pnl: 980.00,
@@ -45,6 +47,7 @@ pub fn sample_pnl_attribution() -> PnlExplain {
         },
         PnlAttribution {
             position: "SPY 95P Mar27".to_string(),
+            portfolio: "Hedge".to_string(),
             underlying: "SPY".to_string(),
             total_pnl: -320.00,
             delta_pnl: -280.00,
@@ -56,6 +59,7 @@ pub fn sample_pnl_attribution() -> PnlExplain {
         },
         PnlAttribution {
             position: "QQQ 150C Mar27".to_string(),
+            portfolio: "Alpha".to_string(),
             underlying: "QQQ".to_string(),
             total_pnl: 890.00,
             delta_pnl: 720.00,
@@ -67,6 +71,7 @@ pub fn sample_pnl_attribution() -> PnlExplain {
         },
         PnlAttribution {
             position: "IWM 50P Mar27".to_string(),
+            portfolio: "Hedge".to_string(),
             underlying: "IWM".to_string(),
             total_pnl: -150.00,
             delta_pnl: -120.00,

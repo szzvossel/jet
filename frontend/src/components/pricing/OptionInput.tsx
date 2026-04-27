@@ -80,6 +80,16 @@ export const OptionInput: React.FC<Props> = ({
   onMarketChange,
   onPrice,
 }) => {
+  // Dynamic ranges based on spot — works for any asset from EEM (~40) to BRK.A (~600k)
+  const spotFloor = Math.max(market.spot * 0.1, 1);
+  const spotCeil = market.spot * 10;
+  const strikeFloor = Math.max(market.spot * 0.1, 1);
+  const strikeCeil = market.spot * 5;
+
+  // Adaptive step size so the slider stays usable at any magnitude
+  const spotStep = Math.max(Math.pow(10, Math.floor(Math.log10(market.spot)) - 2), 0.01);
+  const strikeStep = Math.max(Math.pow(10, Math.floor(Math.log10(market.spot)) - 2), 0.01);
+
   return (
     <div className="surface-card-static p-4 space-y-5">
       <div>
@@ -122,9 +132,9 @@ export const OptionInput: React.FC<Props> = ({
             label="Strike (K)"
             value={contract.strike}
             displayValue={contract.strike.toFixed(2)}
-            min={50}
-            max={150}
-            step={1}
+            min={strikeFloor}
+            max={strikeCeil}
+            step={strikeStep}
             onChange={(v) => onContractChange({ ...contract, strike: v })}
           />
           <SliderField
@@ -152,9 +162,9 @@ export const OptionInput: React.FC<Props> = ({
             label="Spot (S)"
             value={market.spot}
             displayValue={market.spot.toFixed(2)}
-            min={50}
-            max={150}
-            step={1}
+            min={spotFloor}
+            max={spotCeil}
+            step={spotStep}
             onChange={(v) => onMarketChange({ ...market, spot: v })}
           />
           <SliderField

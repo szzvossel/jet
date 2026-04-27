@@ -3,9 +3,10 @@
  *
  * Logs are NOT loaded automatically. The user must click "Load Logs" to trigger
  * a one-time scan and start live monitoring.
+ * State persists across tab switches via useTracerStore.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { KpiCards } from "./KpiCards";
 import { LogLevelChart } from "./LogLevelChart";
 import { ThroughputChart } from "./ThroughputChart";
@@ -13,21 +14,26 @@ import { LatencyChart } from "./LatencyChart";
 import { LogEventTable } from "./LogEventTable";
 import { SourceBreakdown } from "./SourceBreakdown";
 import { fetchTracerKpis, setWatchDir, loadLogs } from "../../hooks/usePricing";
-import type { TracerKpis } from "../../types";
+import { useTracerStore } from "../../stores/useTracerStore";
 
 const POLL_INTERVAL_MS = 3000;
-const LS_KEY = "tracer_watch_dir";
 
 export function TracerTab() {
-  const [kpis, setKpis] = useState<TracerKpis | null>(null);
-  const [logDir, setLogDir] = useState(() => localStorage.getItem(LS_KEY) ?? "");
-  const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const kpis = useTracerStore((s) => s.kpis);
+  const logDir = useTracerStore((s) => s.logDir);
+  const error = useTracerStore((s) => s.error);
+  const loaded = useTracerStore((s) => s.loaded);
+  const loading = useTracerStore((s) => s.loading);
+
+  const setKpis = useTracerStore((s) => s.setKpis);
+  const setLogDir = useTracerStore((s) => s.setLogDir);
+  const setError = useTracerStore((s) => s.setError);
+  const setLoaded = useTracerStore((s) => s.setLoaded);
+  const setLoading = useTracerStore((s) => s.setLoading);
 
   const refresh = useCallback(() => {
     fetchTracerKpis().then(setKpis).catch(console.error);
-  }, []);
+  }, [setKpis]);
 
   // Poll for KPI updates only after the user has loaded logs
   useEffect(() => {
@@ -49,14 +55,13 @@ export function TracerTab() {
     } finally {
       setLoading(false);
     }
-  }, [refresh]);
+  }, [refresh, setError, setLoading, setLoaded]);
 
   const handleApply = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
       await setWatchDir(logDir);
-      localStorage.setItem(LS_KEY, logDir);
       setLoaded(true);
       refresh();
     } catch (err: unknown) {
@@ -64,7 +69,7 @@ export function TracerTab() {
     } finally {
       setLoading(false);
     }
-  }, [logDir, refresh]);
+  }, [logDir, refresh, setError, setLoading, setLoaded]);
 
   return (
     <div className="p-5">
