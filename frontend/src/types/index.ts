@@ -141,6 +141,7 @@ export interface PositionRisk {
   epsilon: number;
   rho: number;
   notional: number;
+  expiry_bucket: string;
 }
 
 export interface RiskSummary {

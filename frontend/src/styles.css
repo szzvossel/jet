@@ -672,6 +672,404 @@ body {
   transform: scale(1.05);
 }
 
+/* ============================================================
+   AG Grid — Dark Theme Overrides
+   ============================================================ */
+
+/* ============================================================
+   AG Grid — Theme-matched overrides for JET dark surface
+   ============================================================ */
+
+.ag-theme-alpine-dark {
+  /* Detail row bg — smooth dark, consistent with page surface. Subtle variation between even/odd */
+  --ag-background-color: rgba(20, 28, 44, 0.7) !important;
+  --ag-header-background-color: rgba(30, 41, 59, 0.9) !important;
+  --ag-control-panel-background-color: rgba(15, 23, 42, 0.95) !important;
+  --ag-subheader-background-color: rgba(30, 41, 59, 0.6) !important;
+  /* Odd row — barely lighter to maintain visible row separation without zebra contrast */
+  --ag-odd-row-background-color: rgba(24, 32, 50, 0.55) !important;
+  /* Row hover — subtle brightening */
+  --ag-row-hover-color: rgba(51, 65, 85, 0.35) !important;
+  --ag-selected-row-background-color: rgba(99, 102, 241, 0.12) !important;
+  --ag-range-selection-border-color: var(--brand-500);
+  --ag-cell-horizontal-border: rgba(71, 85, 105, 0.15) !important;
+
+  /* Text — match GreeksGrid palette: slate-200 for primary, slate-400 for secondary */
+  --ag-foreground-color: #e2e8f0 !important;
+  --ag-secondary-foreground-color: #94a3b8 !important;
+  --ag-header-foreground-color: #94a3b8 !important;
+  --ag-disabled-foreground-color: #475569 !important;
+
+  /* Borders — match GreeksGrid border-slate-800 */
+  --ag-border-color: rgba(71, 85, 105, 0.3) !important;
+  --ag-row-border-color: #1e293b !important;
+
+  /* Typography — match GreeksGrid text-sm (14px) */
+  --ag-font-size: 14px;
+  --ag-font-family: 'DM Sans', system-ui, sans-serif;
+
+  /* Sizing — match GreeksGrid px-4 py-2 */
+  --ag-grid-size: 5px;
+  --ag-header-height: 36px;
+  --ag-row-height: 36px;
+  --ag-cell-horizontal-padding: 16px;
+
+  /* Pivot / group accents */
+  --ag-alpine-active-color: var(--brand-500) !important;
+  --ag-pivot-header-background-color: rgba(99, 102, 241, 0.1) !important;
+  --ag-group-expanded-icon-color: var(--brand-400);
+  --ag-group-contracted-icon-color: #64748b;
+
+  /* Sidebar */
+  --ag-side-bar-background-color: rgba(22, 34, 52, 0.98) !important;
+  --ag-tool-panel-background-color: rgba(22, 34, 52, 0.98) !important;
+  --ag-chip-background-color: rgba(71, 85, 105, 0.55) !important;
+
+  /* Inputs & controls */
+  --ag-input-focus-border-color: var(--brand-500);
+  --ag-toggle-button-on-background-color: var(--brand-500);
+  --ag-toggle-button-off-background-color: rgba(71, 85, 105, 0.4);
+
+  /* Suppress default shadow & radius */
+  --ag-wrapper-border-radius: 0;
+  border-radius: 0;
+
+  /* Force dark background on root */
+  background-color: rgba(22, 30, 46, 0.95) !important;
+  color: #cbd5e1 !important;
+}
+
+/* Force all AG Grid internal elements to dark */
+.ag-theme-alpine-dark .ag-root-wrapper {
+  border: none;
+  background-color: rgba(22, 30, 46, 0.95) !important;
+}
+
+.ag-theme-alpine-dark .ag-root-wrapper-body {
+  background-color: rgba(22, 30, 46, 0.95) !important;
+}
+
+.ag-theme-alpine-dark .ag-body {
+  background-color: rgba(22, 30, 46, 0.95) !important;
+}
+
+.ag-theme-alpine-dark .ag-body-viewport {
+  background-color: rgba(22, 30, 46, 0.95) !important;
+}
+
+.ag-theme-alpine-dark .ag-center-cols-container {
+  background-color: rgba(22, 30, 46, 0.95) !important;
+}
+
+.ag-theme-alpine-dark .ag-header {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+/* Header text — match GreeksGrid: text-slate-400, text-xs, font-medium, uppercase, tracking-wider */
+.ag-theme-alpine-dark .ag-header-cell-text {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  transition: color 120ms ease !important;
+}
+
+/* Header hover — match GreeksGrid hover:text-slate-200 */
+.ag-theme-alpine-dark .ag-header-cell:hover .ag-header-cell-text,
+.ag-theme-alpine-dark .ag-header-cell.ag-column-active .ag-header-cell-text {
+  color: #e2e8f0 !important;
+}
+
+.ag-theme-alpine-dark .ag-header-group-text {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Group row text — match slate-200 (no !important so cellStyle can override) */
+.ag-theme-alpine-dark .ag-group-value {
+  color: #e2e8f0;
+}
+
+.ag-theme-alpine-dark .ag-group-contracted,
+.ag-theme-alpine-dark .ag-group-expanded {
+  color: #94a3b8 !important;
+}
+
+/* Pivot mode indicator text */
+.ag-theme-alpine-dark .ag-pivot-mode-panel {
+  color: #f1f5f9 !important;
+}
+
+/* Floating filter input placeholder */
+.ag-theme-alpine-dark .ag-floating-filter-input::placeholder {
+  color: #64748b !important;
+}
+
+.ag-theme-alpine-dark .ag-floating-filter-input {
+  background-color: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+/* Sidebar text — match slate-200 */
+.ag-theme-alpine-dark .ag-side-bar .ag-panel-title-bar {
+  color: #f1f5f9 !important;
+}
+
+.ag-theme-alpine-dark .ag-tool-panel-wrapper .ag-column-select-header,
+.ag-theme-alpine-dark .ag-tool-panel-wrapper .ag-column-select-list {
+  color: #e2e8f0 !important;
+}
+
+.ag-theme-alpine-dark .ag-header-row {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.ag-theme-alpine-dark .ag-floating-filter {
+  background-color: rgba(22, 30, 46, 0.8) !important;
+}
+
+.ag-theme-alpine-dark .ag-pinned-left-header,
+.ag-theme-alpine-dark .ag-pinned-right-header {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.ag-theme-alpine-dark .ag-cell {
+  border-right-color: rgba(71, 85, 105, 0.15) !important;
+}
+
+/* Group rows — match GreeksGrid bg-slate-800/60 with transition */
+.ag-theme-alpine-dark .ag-row.ag-row-group {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+  transition: background-color 150ms ease !important;
+}
+
+.ag-theme-alpine-dark .ag-row.ag-row-group:hover {
+  background-color: rgba(51, 65, 85, 0.45) !important;
+}
+
+/* All rows — transition hover like GreeksGrid transition-colors */
+.ag-theme-alpine-dark .ag-row {
+  transition: background-color 150ms ease !important;
+}
+
+/* Detail rows — force smooth dark background, not group rows */
+.ag-theme-alpine-dark .ag-row:not(.ag-row-group) {
+  background-color: rgba(20, 28, 44, 0.7) !important;
+}
+
+.ag-theme-alpine-dark .ag-row.ag-row-odd:not(.ag-row-group) {
+  background-color: rgba(24, 32, 50, 0.55) !important;
+}
+
+.ag-theme-alpine-dark .ag-row:not(.ag-row-group):hover {
+  background-color: rgba(51, 65, 85, 0.35) !important;
+}
+
+/* Group column cell — monospace, match Position Greeks row text */
+.ag-theme-alpine-dark .ag-cell.ag-group-cell {
+  font-family: var(--font-mono) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Sidebar panel — visible separation from grid */
+.ag-theme-alpine-dark .ag-side-bar {
+  border-right: 1px solid rgba(71, 85, 105, 0.35) !important;
+}
+
+.ag-theme-alpine-dark .ag-side-buttons {
+  background-color: rgba(15, 23, 42, 0.98) !important;
+  border-right: 1px solid rgba(71, 85, 105, 0.2) !important;
+}
+
+.ag-theme-alpine-dark .ag-side-button {
+  color: #94a3b8 !important;
+}
+
+.ag-theme-alpine-dark .ag-side-button.ag-selected {
+  color: var(--brand-400) !important;
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+.ag-theme-alpine-dark .ag-side-button:hover:not(.ag-selected) {
+  color: #cbd5e1 !important;
+}
+
+.ag-theme-alpine-dark .ag-tool-panel-wrapper {
+  background-color: rgba(22, 34, 52, 0.98) !important;
+}
+
+.ag-theme-alpine-dark .ag-tool-panel-wrapper .ag-panel-header {
+  background-color: rgba(30, 41, 59, 0.85) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3) !important;
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+}
+
+/* Column select panel — search input */
+.ag-theme-alpine-dark .ag-column-select-header {
+  background-color: rgba(22, 34, 52, 0.98) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.25) !important;
+  padding: 10px 12px !important;
+}
+
+.ag-theme-alpine-dark .ag-column-select-header input {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(71, 85, 105, 0.4) !important;
+  border-radius: 4px !important;
+  padding: 6px 8px 6px 28px !important;
+}
+
+.ag-theme-alpine-dark .ag-column-select-header input::placeholder {
+  color: #64748b !important;
+}
+
+.ag-theme-alpine-dark .ag-column-select-header input:focus {
+  border-color: var(--brand-500) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+}
+
+.ag-theme-alpine-dark .ag-column-select-header-icon {
+  color: #64748b !important;
+}
+
+/* Column select panel — checkboxes and labels */
+.ag-theme-alpine-dark .ag-column-select-list .ag-column-select-column {
+  color: #e2e8f0 !important;
+}
+
+.ag-theme-alpine-dark .ag-column-select-list .ag-column-select-column:hover {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+.ag-theme-alpine-dark .ag-column-select-checkbox {
+  color: #94a3b8 !important;
+}
+
+/* Column select panel — column group headers */
+.ag-theme-alpine-dark .ag-column-select-column-group {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+}
+
+/* Drop zone section titles: "Row Groups", "Values", "Column Labels" */
+.ag-theme-alpine-dark .ag-column-drop-vertical-title-bar {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 10px 12px 4px !important;
+}
+
+/* Drop zone empty placeholder text */
+.ag-theme-alpine-dark .ag-column-drop-vertical-empty-message,
+.ag-theme-alpine-dark .ag-column-drop-empty-message {
+  color: #64748b !important;
+  background-color: rgba(71, 85, 105, 0.15) !important;
+  border: 1px dashed rgba(71, 85, 105, 0.35) !important;
+  border-radius: 4px !important;
+}
+
+/* Column tool panel drag targets */
+.ag-theme-alpine-dark .ag-column-drop-cell {
+  background-color: rgba(71, 85, 105, 0.4) !important;
+  border: 1px solid rgba(71, 85, 105, 0.4) !important;
+  color: #cbd5e1 !important;
+}
+
+.ag-theme-alpine-dark .ag-column-drop-cell:hover {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+.ag-theme-alpine-dark .ag-column-drop-empty-text {
+  color: #64748b !important;
+}
+
+/* Column chips in drag area */
+.ag-theme-alpine-dark .ag-column-drop-cell .ag-chip {
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  color: #e2e8f0 !important;
+}
+
+/* Pivot mode toggle */
+.ag-theme-alpine-dark .ag-pivot-mode-select {
+  color: #e2e8f0 !important;
+}
+
+.ag-theme-alpine-dark .ag-pivot-mode-panel {
+  background-color: rgba(30, 41, 59, 0.85) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3) !important;
+  padding: 8px 12px !important;
+}
+
+/* Filter tool panel */
+.ag-theme-alpine-dark .ag-filter-toolpanel .ag-filter-toolpanel-instance-header {
+  color: #f1f5f9 !important;
+  background-color: rgba(30, 41, 59, 0.6) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.2) !important;
+}
+
+.ag-theme-alpine-dark .ag-filter-toolpanel .ag-filter-toolpanel-group-title {
+  color: #e2e8f0 !important;
+}
+
+.ag-theme-alpine-dark .ag-filter-toolpanel .ag-filter-toolpanel-group-item {
+  color: #cbd5e1 !important;
+}
+
+/* Tab panel within sidebar */
+.ag-theme-alpine-dark .ag-tab-header {
+  background-color: rgba(22, 34, 52, 0.98) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.2) !important;
+}
+
+.ag-theme-alpine-dark .ag-tab {
+  color: #94a3b8 !important;
+}
+
+.ag-theme-alpine-dark .ag-tab.ag-tab-selected {
+  color: #f1f5f9 !important;
+  border-bottom: 2px solid var(--brand-500) !important;
+}
+
+.ag-theme-alpine-dark .ag-tab:hover:not(.ag-tab-selected) {
+  color: #cbd5e1 !important;
+}
+
+/* Input fields inside grid */
+.ag-theme-alpine-dark input,
+.ag-theme-alpine-dark select {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(71, 85, 105, 0.3) !important;
+}
+
+/* Scrollbar — match page scrollbar */
+.ag-theme-alpine-dark ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.ag-theme-alpine-dark ::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.4);
+}
+
+.ag-theme-alpine-dark ::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
+  border-radius: 2px;
+}
+
+.ag-theme-alpine-dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
 .slider-refined::-moz-range-thumb {
   width: 14px;
   height: 14px;

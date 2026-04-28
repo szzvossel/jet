@@ -83,8 +83,8 @@ export const OptionInput: React.FC<Props> = ({
   // Dynamic ranges based on spot — works for any asset from EEM (~40) to BRK.A (~600k)
   const spotFloor = Math.max(market.spot * 0.1, 1);
   const spotCeil = market.spot * 10;
-  const strikeFloor = Math.max(market.spot * 0.1, 1);
-  const strikeCeil = market.spot * 5;
+  const strikeFloor = 0;
+  const strikeCeil = market.spot * 2;
 
   // Adaptive step size so the slider stays usable at any magnitude
   const spotStep = Math.max(Math.pow(10, Math.floor(Math.log10(market.spot)) - 2), 0.01);

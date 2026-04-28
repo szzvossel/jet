@@ -7,6 +7,7 @@
 
 import { useEffect } from "react";
 import { GreeksGrid } from "./GreeksGrid";
+import { RiskPivotGrid } from "./RiskPivotGrid";
 import { DeltaExposureChart } from "./DeltaExposureChart";
 import { NumberDisplay } from "../shared/NumberDisplay";
 import { fetchRiskSummary } from "../../hooks/usePricing";
@@ -102,6 +103,17 @@ export function RiskTab() {
           <div className="mt-3">
             <DeltaExposureChart positions={riskData.positions} />
           </div>
+        </div>
+
+        {/* Multi-dimensional pivot analysis */}
+        <div className="surface-card-static p-4 animate-fade-up">
+          <div className="flex items-center justify-between mb-3">
+            <span className="data-label">Multi-Dimensional Analysis</span>
+            <span className="text-[10px] text-slate-600">
+              Drag columns to row groups / pivot / values in the sidebar
+            </span>
+          </div>
+          <RiskPivotGrid positions={riskData.positions} />
         </div>
       </div>
     </div>

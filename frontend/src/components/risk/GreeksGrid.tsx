@@ -47,6 +47,23 @@ export const GreeksGrid: React.FC<Props> = ({ positions }) => {
       ),
     },
     {
+      key: "expiry_bucket",
+      header: "Expiry",
+      align: "center",
+      render: (val: string) => {
+        const colors: Record<string, string> = {
+          "< 1M": "text-red-400",
+          "1M\u20133M": "text-amber-400",
+          "3M+": "text-emerald-400",
+        };
+        return (
+          <span className={`text-xs font-medium ${colors[val] ?? "text-slate-400"}`}>
+            {val}
+          </span>
+        );
+      },
+    },
+    {
       key: "delta",
       header: "Delta",
       align: "right",
